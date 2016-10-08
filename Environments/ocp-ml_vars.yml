@@ -6,13 +6,14 @@ remote_user: ec2-user
 ## NFS Server settings
 nfs_vg: nfsvg
 nfs_pvs: /dev/xvdb
-nfs_export_path: srv/nfs
+nfs_export_path: /srv/nfs
 
 
 ### OpenShift Vars
 repo_version: "3.3"
 docker_version: "1.10.3"
-
+docker_device: /dev/xvdb
+idm: true
 #### Vars for the Ansible hosts file
 install_metrics: true
 master_api_port: 8443
