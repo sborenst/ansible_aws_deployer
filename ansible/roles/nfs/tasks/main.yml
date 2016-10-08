@@ -16,3 +16,8 @@
     gather_facts: False
     include: ./config_nfs_mount_storage.yml
     tags: [  config_nfs_mount_storage ]
+
+  - name: create nfs exports
+    gather_facts: False
+    include: ./nfs_exports.yml
+    tags: [  create_nfs_exports ]

@@ -79,8 +79,30 @@ openshift_master_identity_providers=[{'name': 'ldap', 'challenge': 'true', 'logi
 # Enable cluster metrics
 use_cluster_metrics={{ install_metrics }}
 
+openshift_hosted_metrics_deploy={{install_metrics}}
+
 openshift_hosted_metrics_public_url=https://metrics.{{cloudapps_suffix}}/hawkular/metrics
 openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
+
+
+openshift_hosted_metrics_storage_kind=nfs
+openshift_hosted_metrics_storage_access_modes=['ReadWriteOnce']
+openshift_hosted_metrics_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
+openshift_hosted_metrics_storage_nfs_directory=/srv/nfs
+openshift_hosted_metrics_storage_nfs_options='*(rw,root_squash)'
+openshift_hosted_metrics_storage_volume_name=metrics
+openshift_hosted_metrics_storage_volume_size=10Gi
+
+openshift_hosted_logging_deploy={{install_logging}}
+openshift_hosted_logging_storage_kind=nfs
+openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
+openshift_hosted_logging_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
+
+openshift_hosted_logging_storage_nfs_directory=/srv/nfs
+openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
+openshift_hosted_logging_storage_volume_name=logging
+openshift_hosted_logging_storage_volume_size=10Gi
+
 
 
 ###########################################################################
@@ -89,6 +111,7 @@ openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
 
 # Configure additional projects
 #openshift_additional_projects={'my-project': {'default_node_selector': 'label=value'}}
+
 
 
 ###########################################################################
@@ -112,14 +135,7 @@ openshift_hosted_registry_storage_volume_name=registry
 openshift_hosted_registry_storage_volume_size=10Gi
 
 
-openshift_hosted_metrics_storage_kind=nfs
-openshift_hosted_metrics_storage_access_modes=['ReadWriteOnce']
-# Not sure if metrics_storage_host exists
-openshift_hosted_metrics_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
-openshift_hosted_metrics_storage_nfs_directory=/srv/nfs
-openshift_hosted_metrics_storage_nfs_options='*(rw,root_squash)'
-openshift_hosted_metrics_storage_volume_name=metrics
-openshift_hosted_metrics_storage_volume_size=10Gi
+
 
 #openshift_cloudprovider_aws_access_key="{{ lookup('env','AWS_ACCESS_KEY_ID') }}"
 #openshift_cloudprovider_aws_secret_key="{{ lookup('env','AWS_SECRET_ACCESS_KEY') }}"

@@ -9,7 +9,6 @@
 ######################### Generate CF Template
 ######################### Launch CF Template
 
-
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
@@ -21,12 +20,15 @@
 
 ######################### Populate Dynamic Inventory
 
-  - name: Provisioning Environment
+  - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
     - "../Environments/{{config}}_vars.yml"
     include: ./dynamic_inventory.yml
     tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
+
+
+
 
 ######################### LOCAL Bastion Proxy Config
 
@@ -37,7 +39,6 @@
   - name: copy ssh.cfg into local ~.ssh/Config
     shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
     tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
-
 
 ######################### Run COMMON Tasks on all hosts
 
@@ -76,6 +77,13 @@
     - nfs
   tags: [ nfs_tasks ]
 
+- name: Configuring nfs Host
+  hosts: nfs
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tasks:
+    - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+
 ####################### Startring OpenShift Specific Deployment
 
 #########################Configuring openshfit-provisioner
@@ -87,6 +95,7 @@
     - "../Environments/{{config}}_vars.yml"
   roles:
     - openshift-provisioner
+  tags: [ openshift_provisioner_tasks ]
 
 
 #########################Configuring openshfit-nodes
@@ -99,3 +108,43 @@
   roles:
     - openshift-node
   tags: [ openshift_node_tasks ]
+
+
+#########################run openshift installer
+
+- name: Run OpenShift Installer
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ run_openshift_installer ]
+  tasks:
+    - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
+      shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
+      register: openshift_install_log
+      tags: [ openshfit_installer ]
+    - name: get openshfit credentials file
+      shell: ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
+
+#      shell: scp -r {{hostvars[groups['masters'][0]]['private_hostname']}}:/root/.kube /root
+
+    - set_fact:
+        pv_size: '10Gi'
+        pv_list: "{{ nfs_shares }}"
+        persistentVolumeReclaimPolicy: Retain
+
+    - name: Generate PV file
+      template: src=files/ocp-ml_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
+      tags: [ testing ]
+
+
+    - set_fact:
+        pv_size: "{{user_vols_size}}"
+        persistentVolumeReclaimPolicy: Recycle
+    - name: Generate user vol PV file
+      template: src=files/ocp-ml_userpvs.j2 dest=/root/userpvs-{{config}}-{{guid}}.yml
+      tags: [ testing ]
+    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml | oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+      become: true
+    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml | oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
+      become: true
