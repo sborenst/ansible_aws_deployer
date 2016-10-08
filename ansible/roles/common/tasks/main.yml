@@ -19,3 +19,4 @@
 ######################### Run a complete yum update
   - name: run a yum update
     shell: "yum update -y"
+    tags: [ yum_update ]

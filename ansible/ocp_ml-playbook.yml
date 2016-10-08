@@ -49,3 +49,25 @@
     - "../Environments/{{config}}_vars.yml"
   roles:
     - common
+  tags: [ common_tasks ]
+
+
+######################### Run bastion Tasks on all hosts
+
+- name: Configuring common Hosts
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - bastion
+  tags: [ bastion_tasks ]
+
+
+- name: Configuring nfs Host
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - nfs

@@ -3,6 +3,12 @@
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
 
+## NFS Server settings
+nfs_vg: nfsvg
+nfs_pvs: /dev/xvdb
+nfs_export_path: srv/nfs
+
+
 ### OpenShift Vars
 repo_version: "3.3"
 docker_version: "1.10.3"
