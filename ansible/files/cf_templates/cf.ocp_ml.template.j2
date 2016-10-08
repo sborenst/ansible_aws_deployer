@@ -1,0 +1,1282 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "zoneinternalidns": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "{{ zone_internal_dns }}",
+        "HostedZoneConfig": {
+          "Comment": "Created By Cloudformation"
+        }
+      }
+    },
+    "zonepublicdns": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "{{zone_public_dns}}",
+        "HostedZoneConfig": {
+          "Comment": "Created By Cloudformation"
+        }
+      }
+    },
+    "cloudappsdns": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "zonepublicdns"
+        },
+        "RecordSets": [
+          {
+            "Name": "{{cloudapps_dns}}",
+            "Type": "A",
+            "AliasTarget": {
+              "HostedZoneId": {
+                "Fn::GetAtt": [
+                  "elbmasterlb",
+                  "CanonicalHostedZoneNameID"
+                ]
+              },
+              "DNSName": {
+                "Fn::GetAtt": [
+                  "elbrouterlb",
+                  "CanonicalHostedZoneName"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "masterdns": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "zonepublicdns"
+        },
+        "RecordSets": [
+          {
+            "Name": "{{master_public_dns}}",
+            "Type": "A",
+            "AliasTarget": {
+              "HostedZoneId": {
+                "Fn::GetAtt": [
+                  "elbmasterlb",
+                  "CanonicalHostedZoneNameID"
+                ]
+              },
+              "DNSName": {
+                "Fn::GetAtt": [
+                  "elbmasterlb",
+                  "CanonicalHostedZoneName"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    "vpcid": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "{{vpcid_cidr_block}}",
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{vpcid_name_tag}}"
+          }
+        ]
+      }
+    },
+    "subnetprivate1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "{{subnet_private_1_cidr_block}}",
+        "AvailabilityZone": "{{subnet_private_1_az}}",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{subnet_private_1_name_tag}}"
+          }
+        ]
+      }
+    },
+    "subnetpublic1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "{{subnet_public_1_cidr_block}}",
+        "AvailabilityZone": "{{subnet_public_1_az}}",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{subnet_public_1_name_tag}}"
+          }
+        ]
+      }
+    },
+    "subnetprivate2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "{{subnet_private_2_cidr_block}}",
+        "AvailabilityZone": "{{subnet_private_2_az}}",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{subnet_private_2_name_tag}}"
+          }
+        ]
+      }
+    },
+    "subnetpublic2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "{{subnet_public_2_cidr_block}}",
+        "AvailabilityZone": "{{subnet_public_2_az}}",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{subnet_public_2_name_tag}}"
+          }
+        ]
+      }
+    },
+    "igw": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+      }
+    },
+    "dopt": {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": "{{dopt_domain_name}}",
+        "DomainNameServers": [
+          "AmazonProvidedDNS"
+        ]
+      }
+    },
+    "acl": {
+      "Type": "AWS::EC2::NetworkAcl",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        }
+      }
+    },
+    "rtbpublic": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{rtb_public_name_tag}}"
+          }
+        ]
+      }
+    },
+    "rtbprivate": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "{{rtb_private_name_tag}}"
+          }
+        ]
+      }
+    },
+    "rtbcandelete": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        }
+      }
+    },
+    "elbrouterlb": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "subnetpublic2"
+          },
+          {
+            "Ref": "subnetpublic1"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": "2",
+          "Interval": "10",
+          "Target": "TCP:80",
+          "Timeout": "3",
+          "UnhealthyThreshold": "2"
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "false",
+          "Timeout": "300"
+        },
+        "ConnectionSettings": {
+          "IdleTimeout": "60"
+        },
+        "CrossZone": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgrouter"
+          }
+        ],
+        "Listeners": [
+          {
+            "InstancePort": "80",
+            "LoadBalancerPort": "80",
+            "Protocol": "HTTP",
+            "InstanceProtocol": "HTTP"
+          },
+          {
+            "InstancePort": "443",
+            "LoadBalancerPort": "443",
+            "Protocol": "TCP",
+            "InstanceProtocol": "TCP"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "elbmasterlb": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Ref": "subnetpublic2"
+          },
+          {
+            "Ref": "subnetpublic1"
+          }
+        ],
+        "HealthCheck": {
+          "HealthyThreshold": "2",
+          "Interval": "10",
+          "Target": "TCP:8443",
+          "Timeout": "3",
+          "UnhealthyThreshold": "2"
+        },
+        "ConnectionDrainingPolicy": {
+          "Enabled": "false",
+          "Timeout": "300"
+        },
+        "ConnectionSettings": {
+          "IdleTimeout": "60"
+        },
+        "CrossZone": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgmaster"
+          }
+        ],
+        "Listeners": [
+          {
+            "InstancePort": "8443",
+            "LoadBalancerPort": "8443",
+            "Protocol": "TCP",
+            "InstanceProtocol": "TCP"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "asgbastion": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "1",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "1",
+        "MinSize": "1",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcbastion"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "bastion",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "Bastion",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "asgetcd": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "0",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "0",
+        "MinSize": "0",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcetcd"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "etcd",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "Etcd",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "asginfranode": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "2",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "2",
+        "MinSize": "2",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcinfranode"
+        },
+        "LoadBalancerNames": [
+          {
+            "Ref": "elbrouterlb"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "infranode",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "Infranode",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "asgmaster": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "2",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "2",
+        "MinSize": "2",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcmaster"
+        },
+        "LoadBalancerNames": [
+          {
+            "Ref": "elbmasterlb"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "master",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "Master",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "asgnode": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "3",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "3",
+        "MinSize": "3",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcnode"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "node",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "Node",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "asgnfs": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          "{{az_1_name}}",
+          "{{az_2_name}}"
+        ],
+        "Cooldown": "300",
+        "DesiredCapacity": "1",
+        "HealthCheckGracePeriod": "300",
+        "HealthCheckType": "EC2",
+        "MaxSize": "3",
+        "MinSize": "1",
+        "VPCZoneIdentifier": [
+          {
+            "Ref": "subnetpublic1"
+          },
+          {
+            "Ref": "subnetpublic2"
+          }
+        ],
+        "LaunchConfigurationName": {
+          "Ref": "lcnfs"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "nfs",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Nodetype",
+            "Value": "NFS",
+            "PropagateAtLaunch": true
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}",
+            "PropagateAtLaunch": true
+          }
+        ],
+        "TerminationPolicies": [
+          "Default"
+        ]
+      }
+    },
+    "lcnfs": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": true,
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgnodetraffic"
+          },
+          {
+            "Ref": "sgegress"
+          },
+          {
+            "Ref": "sgbastiontohosts"
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvdb",
+            "Ebs": {
+              "VolumeSize": 200
+            }
+          }
+        ]
+      }
+    },
+    "lcbastion": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": true,
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgbastion"
+          }
+        ]
+      }
+    },
+    "lcetcd": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgnodetraffic"
+          },
+          {
+            "Ref": "sgegress"
+          },
+          {
+            "Ref": "sgbastiontohosts"
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvdb",
+            "Ebs": {
+              "VolumeSize": 20
+            }
+          }
+        ]
+      }
+    },
+    "lcinfranode": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": true,
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgnodetraffic"
+          },
+          {
+            "Ref": "sgegress"
+          },
+          {
+            "Ref": "sgelbtraffic"
+          },
+          {
+            "Ref": "sgbastiontohosts"
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvdb",
+            "Ebs": {
+              "VolumeSize": 60
+            }
+          }
+        ]
+      }
+    },
+    "lcmaster": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": true,
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgnodetraffic"
+          },
+          {
+            "Ref": "sgegress"
+          },
+          {
+            "Ref": "sgelbtraffic"
+          },
+          {
+            "Ref": "sgbastiontohosts"
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvdb",
+            "Ebs": {
+              "VolumeSize": 60
+            }
+          }
+        ]
+      }
+    },
+    "lcnode": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "AssociatePublicIpAddress": true,
+        "ImageId": "{{ami_id}}",
+        "InstanceType": "{{instance_type}}",
+        "KeyName": "{{key_name}}",
+        "InstanceMonitoring": "true",
+        "SecurityGroups": [
+          {
+            "Ref": "sgnodetraffic"
+          },
+          {
+            "Ref": "sgegress"
+          },
+          {
+            "Ref": "sgbastiontohosts"
+          }
+        ],
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvdb",
+            "Ebs": {
+              "VolumeSize": 60
+            }
+          }
+        ]
+      }
+    },
+    "volumevol819ccf0c": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_1_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevol809ccf0d": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_1_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevol969ccf1b": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_1_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevola09ccf2d": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_1_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevol2632a3a9": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_2_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevol2032a3af": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_2_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "volumevol8335a40c": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "AvailabilityZone": "{{az_2_name}}",
+        "Size": "60",
+        "VolumeType": "gp2"
+      }
+    },
+    "sgbastion": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow inbound SSH access to bastion",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgdefault": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "default VPC security group",
+        "VpcId": {
+          "Ref": "vpcid"
+        }
+      }
+    },
+    "sgegress": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow egress trffic from nodes",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgmaster": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "External access to master ELB",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgrouter": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "External access to router ELB",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgnodetraffic": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow traffic between nodes",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgelbtraffic": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow traffic from ELBs",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "sgbastiontohosts": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow access from bastion host",
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    },
+    "acl3": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Egress": "true",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl"
+        }
+      }
+    },
+    "acl4": {
+      "Type": "AWS::EC2::NetworkAclEntry",
+      "Properties": {
+        "CidrBlock": "0.0.0.0/0",
+        "Protocol": "-1",
+        "RuleAction": "allow",
+        "RuleNumber": "100",
+        "NetworkAclId": {
+          "Ref": "acl"
+        }
+      }
+    },
+    "subnetacl5": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl"
+        },
+        "SubnetId": {
+          "Ref": "subnetpublic1"
+        }
+      }
+    },
+    "subnetacl6": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl"
+        },
+        "SubnetId": {
+          "Ref": "subnetprivate2"
+        }
+      }
+    },
+    "subnetacl7": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl"
+        },
+        "SubnetId": {
+          "Ref": "subnetprivate1"
+        }
+      }
+    },
+    "subnetacl8": {
+      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+      "Properties": {
+        "NetworkAclId": {
+          "Ref": "acl"
+        },
+        "SubnetId": {
+          "Ref": "subnetpublic2"
+        }
+      }
+    },
+    "gw2": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "InternetGatewayId": {
+          "Ref": "igw"
+        }
+      }
+    },
+    "subnetroute6": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "rtbpublic"
+        },
+        "SubnetId": {
+          "Ref": "subnetpublic2"
+        }
+      }
+    },
+    "subnetroute7": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "rtbpublic"
+        },
+        "SubnetId": {
+          "Ref": "subnetpublic1"
+        }
+      }
+    },
+    "subnetroute8": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "rtbprivate"
+        },
+        "SubnetId": {
+          "Ref": "subnetprivate2"
+        }
+      }
+    },
+    "subnetroute9": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "rtbprivate"
+        },
+        "SubnetId": {
+          "Ref": "subnetprivate1"
+        }
+      }
+    },
+    "route2": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "RouteTableId": {
+          "Ref": "rtbpublic"
+        },
+        "GatewayId": {
+          "Ref": "igw"
+        }
+      },
+      "DependsOn": "gw2"
+    },
+    "dchpassoc2": {
+      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcid"
+        },
+        "DhcpOptionsId": {
+          "Ref": "dopt"
+        }
+      }
+    },
+    "ingress11": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgbastion"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress12": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "sgdefault"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "ingress13": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgmaster"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "8443",
+        "ToPort": "8443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress14": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgrouter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress15": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgrouter"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "443",
+        "ToPort": "443",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "ingress16": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgnodetraffic"
+        },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId": {
+          "Ref": "sgnodetraffic"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "ingress17": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgelbtraffic"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "80",
+        "ToPort": "80",
+        "SourceSecurityGroupId": {
+          "Ref": "sgrouter"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "ingress18": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgelbtraffic"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "8443",
+        "ToPort": "8443",
+        "SourceSecurityGroupId": {
+          "Ref": "sgmaster"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "ingress19": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgelbtraffic"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "443",
+        "ToPort": "443",
+        "SourceSecurityGroupId": {
+          "Ref": "sgrouter"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "ingress20": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgbastiontohosts"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "22",
+        "ToPort": "22",
+        "SourceSecurityGroupId": {
+          "Ref": "sgbastion"
+        },
+        "SourceSecurityGroupOwnerId": "719622469867"
+      }
+    },
+    "egress7": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgbastion"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress8": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgdefault"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress9": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgegress"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress10": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgmaster"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress11": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgrouter"
+        },
+        "IpProtocol": "-1",
+        "CidrIp": "0.0.0.0/0"
+      }
+    },
+    "egress12": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "sgnodetraffic"
+        },
+        "IpProtocol": "-1",
+        "DestinationSecurityGroupId": {
+          "Ref": "sgnodetraffic"
+        }
+      }
+    }
+  },
+  "Description": "{{cf_template_description}}"
+}

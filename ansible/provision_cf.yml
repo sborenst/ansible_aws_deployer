@@ -1,0 +1,26 @@
+- name: Provisioning Environment
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+  - "../Environments/{{config}}_vars.yml"
+  tasks:
+
+######################### Generate CF Template
+    - name: Generate CloudFormation Template
+      template: src=files/cf_templates/cf.{{config}}.template.j2 dest=../cf.{{config}}.{{guid}}.json
+      tags: [ provisioning, gen_cf_template]
+
+######################### Launch CF Template
+    - name: launch cloudformation template
+      cloudformation:
+        stack_name: "{{project_tag}}"
+        state: "present"
+        region: "{{aws_region}}"
+        disable_rollback: false
+        template: "../cf.{{config}}.{{guid}}.json"
+        template_parameters:
+          KeyName: "{{key_name}}"
+        tags:
+          Stack: "project {{project_tag}}"
+      tags: [ provisioning, provision_cf_template]
