@@ -1,0 +1,30 @@
+- name: Starting environment deployment
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+  - "../Environments/{{config}}_vars.yml"
+  tasks:
+
+######################### Generate CF Template
+######################### Launch CF Template
+
+
+  - name: Provisioning Environment
+    gather_facts: False
+    vars_files:
+    - "../Environments/{{config}}_vars.yml"
+    include: ./provision_cf.yml
+    tags: [ provisioning, gen_cf_templatem, provisiong_cf_template ]
+
+
+
+######################### Populate Dynamic Inventory
+
+
+  - name: Provisioning Environment
+    gather_facts: False
+    vars_files:
+    - "../Environments/{{config}}_vars.yml"
+    include: ./dynamic_inventory.yml
+    tags: [ dynamic_inventory ]
