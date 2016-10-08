@@ -27,7 +27,7 @@ openshift_master_overwrite_named_certificates: true
 
 
 #### PRIVATE PASSWORDS VARS THAT YOU SHOULD NEVER COMMIT
-bindPassword: 'ZZZZZ'
+#bindPassword: 'ZZZZZ'
 
 
 
