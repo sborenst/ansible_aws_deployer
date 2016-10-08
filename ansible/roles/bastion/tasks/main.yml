@@ -4,7 +4,8 @@
 ######################### Setting up environment for post deployment administration
 
 - name: copy the environment .pem key
-  copy: src=~/.ssh/{{ key_name }}.pem dest=/root/.ssh/{{ key_name }}.pem owner=root group=root mode=0400
+  become: true
+  copy: src=~/.ssh/{{ key_name }}.pem dest=/root/.ssh/{{key_name}}.pem owner=root group=root mode=0400
   tags: [ copy_env_private_key ]
 
 - name: Generate host .ssh/config Template
@@ -13,5 +14,6 @@
   tags: [ gen_sshconfig_file ]
 
 - name: copy over host .ssh/config Template
+  become: true
   copy: src=../workdir/ssh-config-{{config}}-{{guid}} dest=/root/.ssh/config owner=root group=root mode=0400
   tags: [ copy_sshconfig_file ]

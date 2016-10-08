@@ -41,7 +41,6 @@
 
 ######################### Run COMMON Tasks on all hosts
 
-
 - name: Configuring common Hosts
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
@@ -52,9 +51,11 @@
   tags: [ common_tasks ]
 
 
-######################### Run bastion Tasks on all hosts
+######################### Run bastion Tasks
 
-- name: Configuring common Hosts
+
+
+- name: Configuring Bastion Hosts
   hosts: bastions
   become: yes
   vars_files:
@@ -64,6 +65,8 @@
   tags: [ bastion_tasks ]
 
 
+#########################Configuring nfs Host
+
 - name: Configuring nfs Host
   hosts: nfs
   become: yes
@@ -71,3 +74,28 @@
     - "../Environments/{{config}}_vars.yml"
   roles:
     - nfs
+  tags: [ nfs_tasks ]
+
+####################### Startring OpenShift Specific Deployment
+
+#########################Configuring openshfit-provisioner
+
+- name: Configuring openshfit-provisioner
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - openshift-provisioner
+
+
+#########################Configuring openshfit-nodes
+
+- name: Configuring openshfit-nodes
+  hosts: infranodes,nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - openshift-node
+  tags: [ openshift_node_tasks ]

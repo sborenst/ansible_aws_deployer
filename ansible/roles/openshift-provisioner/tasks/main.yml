@@ -1,0 +1,23 @@
+---
+## NFS specific
+
+
+######################### Install openshift-provisioner Packages
+
+  - name: Install openshift-provisioner Packages
+    gather_facts: False
+    include: ./packages.yml
+    tags: [  install_openshift_node_packages ]
+
+
+######################### Enable copy over environemnt details
+
+  - name: Copy over ansible hosts file
+    copy: src=../workdir/hosts-{{config}}-{{guid}} dest=/etc/ansible/hosts
+
+  - name: get idm certificate
+    get_url:
+      url: http://ipa.opentlc.com/ipa/config/ca.crt
+      dest: /root/ca.crt
+      mode: 0440
+    when: "{{idm}}"
