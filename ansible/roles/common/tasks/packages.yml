@@ -1,0 +1,14 @@
+---
+######################### Install Basic Packages
+- name: install basic packages
+  yum: name="{{ item }}" state=present
+  with_items:
+    - python
+    - unzip
+    - bash-completion
+    - tmux
+    - bind-utils
+    - wget
+    - ansible
+    - vim
+  tags: [ install_basic_packages ]

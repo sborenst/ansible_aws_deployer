@@ -21,10 +21,31 @@
 
 ######################### Populate Dynamic Inventory
 
-
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
     - "../Environments/{{config}}_vars.yml"
     include: ./dynamic_inventory.yml
-    tags: [ dynamic_inventory ]
+    tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
+
+######################### LOCAL Bastion Proxy Config
+
+  - name: Generate ssh.cfg Template
+    template: src=files/ssh.cfg.j2 dest=../workdir/ssh-{{config}}-{{guid}}.cfg
+    tags: [ bastion_proxy_config, create_ssh_cfg_template ]
+
+  - name: copy ssh.cfg into local ~.ssh/Config
+    shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
+    tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
+
+
+######################### Run COMMON Tasks on all hosts
+
+
+- name: Configuring common Hosts
+  hosts: bastions,nfs,masters,infranodes,nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - common
