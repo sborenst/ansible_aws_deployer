@@ -2,11 +2,46 @@
 ### Common Vars
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
+repo_version: "3.3"
+
+#### PRIVATE PASSWORDS VARS THAT YOU SHOULD NEVER COMMIT
+#bindPassword: 'ZZZZZ'
+bindPassword: 'zzzzzz'
+
+rhel_subscription_user: zzzzzz
+rhel_subscription_pass: 'zzzzzzz'
+
+subdomain_base_short: test5-ml
+subdomain_base: "{{subdomain_base_short}}.opentlc.com"
+
+
+
+rhel_pool_id:
+  - "8a85f981544efea201544fba3ec64483"
+
+rhel_repos:
+    - rhel-7-server-rpms
+    - rhel-7-server-extras-rpms
+    - rhel-7-server-ose-{{repo_version}}-rpms
+    - rhel-7-server-optional-rpms
+    - rhel-7-server-rh-common-rpms
+
+use_subscription_manager: true
+use_opentlc_repos: false
 
 ## NFS Server settings
 nfs_vg: nfsvg
 nfs_pvs: /dev/xvdb
 nfs_export_path: /srv/nfs
+
+nfs_shares:
+    - user-vols
+    - nexus
+    - jenkins
+    - es-storage
+
+user_vols: 100
+user_vols_size: 5Gi
 
 
 ### OpenShift Vars
@@ -14,55 +49,56 @@ repo_version: "3.3"
 docker_version: "1.10.3"
 docker_device: /dev/xvdb
 idm: true
+install_metrics: true
+install_logging: true
 #### Vars for the Ansible hosts file
 install_metrics: true
 master_api_port: 8443
 multi_tenant_setting: "os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'"
-master_lb_dns: "master.test-ml.opentlc.com"
+master_lb_dns: "master.{{subdomain_base}}"
 
-cloudapps_suffix: 'cloudapps.test-ml.opentlc.com'
+cloudapps_suffix: 'cloudapps.{{subdomain_base}}'
 openshift_master_ldap_ca_file: 'openshift_master_ldap_ca_file=/root/ca.crt'
-osrelease: 3.3.0.32
+osrelease: 3.3.0.34
 openshift_master_overwrite_named_certificates: true
 
 
-#### PRIVATE PASSWORDS VARS THAT YOU SHOULD NEVER COMMIT
-#bindPassword: 'ZZZZZ'
 
+timeout: 60
 
 
 ### CLOUDFORMATIONS vars
 
 project_tag: "{{config}}-{{guid}}"
-zone_internal_dns: "internal.test-ml.opentlc.com."
-zone_public_dns: "test-ml.opentlc.com."
-cloudapps_dns: '*.cloudapps.test-ml.opentlc.com.'
+zone_internal_dns: "internal.{{subdomain_base}}."
+zone_public_dns: "{{subdomain_base}}."
+cloudapps_dns: '*.cloudapps.{{subdomain_base}}.'
 
-master_public_dns: "master.test-ml.opentlc.com."
+master_public_dns: "master.{{subdomain_base}}."
 vpcid_cidr_block: "192.168.0.0/16"
-vpcid_name_tag: "test-ml.opentlc.com"
+vpcid_name_tag: "{{subdomain_base}}"
 aws_region: "ap-southeast-2"
 
 subnet_private_1_cidr_block: "192.168.2.0/24"
 subnet_private_1_az: "ap-southeast-2b"
-subnet_private_1_name_tag: "test-ml.opentlc.com-private"
+subnet_private_1_name_tag: "{{subdomain_base}}-private"
 
 subnet_private_2_cidr_block: "192.168.1.0/24"
 subnet_private_2_az: "ap-southeast-2a"
-subnet_private_2_name_tag: "test-ml.opentlc.com-private"
+subnet_private_2_name_tag: "{{subdomain_base}}-private"
 
 subnet_public_1_cidr_block: "192.168.10.0/24"
 subnet_public_1_az: "ap-southeast-2a"
-subnet_public_1_name_tag: "test-ml.opentlc.com-public"
+subnet_public_1_name_tag: "{{subdomain_base}}-public"
 
 subnet_public_2_cidr_block: "192.168.20.0/24"
 subnet_public_2_az: "ap-southeast-2b"
-subnet_public_2_name_tag: "test-ml.opentlc.com-public"
+subnet_public_2_name_tag: "{{subdomain_base}}-public"
 
 dopt_domain_name: "ap-southeast-2.compute.internal"
 
-rtb_public_name_tag: "test-ml.opentlc.com-public"
-rtb_private_name_tag: "test-ml.opentlc.com-private"
+rtb_public_name_tag: "{{subdomain_base}}-public"
+rtb_private_name_tag: "{{subdomain_base}}-private"
 
 az_1_name: "ap-southeast-2a"
 az_2_name: "ap-southeast-2b"
@@ -73,6 +109,6 @@ key_name: "test-ml"
 
 #s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'
 #s3_registry_bucket_name: "docker-registry"
-#s3_registry_bucket_domain: ".test-ml.bucket/*"
+#s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
 cf_template_description: "{{config}}-{{guid}} template "

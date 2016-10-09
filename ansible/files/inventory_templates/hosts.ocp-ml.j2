@@ -82,7 +82,6 @@ use_cluster_metrics={{ install_metrics }}
 openshift_hosted_metrics_deploy={{install_metrics}}
 
 openshift_hosted_metrics_public_url=https://metrics.{{cloudapps_suffix}}/hawkular/metrics
-openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
 
 
 openshift_hosted_metrics_storage_kind=nfs
@@ -93,16 +92,28 @@ openshift_hosted_metrics_storage_nfs_options='*(rw,root_squash)'
 openshift_hosted_metrics_storage_volume_name=metrics
 openshift_hosted_metrics_storage_volume_size=10Gi
 
-openshift_hosted_logging_deploy={{install_logging}}
-openshift_hosted_logging_storage_kind=nfs
-openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
-openshift_hosted_logging_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
 
-openshift_hosted_logging_storage_nfs_directory=/srv/nfs
-openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
-openshift_hosted_logging_storage_volume_name=logging
-openshift_hosted_logging_storage_volume_size=10Gi
+openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
+#openshift_hosted_logging_deploy={{install_logging}}
 
+#openshift_hosted_logging_storage_kind=nfs
+#openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
+#openshift_hosted_logging_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
+
+#openshift_hosted_logging_storage_nfs_directory=/srv/nfs
+#openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
+#openshift_hosted_logging_storage_volume_name=logging
+#openshift_hosted_logging_storage_volume_size=10Gi
+
+
+#openshift_hosted_logging_hostname=https://kibana.{{cloudapps_suffix}}
+#openshift_hosted_logging_elasticsearch_cluster_size=1
+#openshift_hosted_logging_master_public_url='https://{{master_lb_dns}}:8443'
+
+#openshift_hosted_logging_elasticsearch_pvc_size=9Gi
+#openshift_hosted_logging_elasticsearch_nodeselector="region=infra"
+#openshift_hosted_logging_kibana_nodeselector="region=infra"
+#openshift_hosted_logging_curator_nodeselector="logging=true"
 
 
 ###########################################################################
@@ -136,7 +147,6 @@ openshift_hosted_registry_storage_volume_size=10Gi
 
 
 
-
 #openshift_cloudprovider_aws_access_key="{{ lookup('env','AWS_ACCESS_KEY_ID') }}"
 #openshift_cloudprovider_aws_secret_key="{{ lookup('env','AWS_SECRET_ACCESS_KEY') }}"
 
@@ -164,13 +174,13 @@ nfs
 
 [nodes]
 {% for host in groups['masters'] %}
-{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'openshift_schedulable':'False','region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','openshift_schedulable':'False','region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
 {% endfor %}
 {% for host in groups['infranodes'] %}
-{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'region': 'infra', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','region': 'infra', 'zone': '{{hostvars[host]['availability_zone']}}'}"
 {% endfor %}
 {% for host in groups['nodes'] %}
-{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{{ hostvars[host]['private_hostname'] }} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
 {% endfor %}
 
 [nfs]

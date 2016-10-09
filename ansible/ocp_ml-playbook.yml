@@ -28,8 +28,6 @@
     tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
 
 
-
-
 ######################### LOCAL Bastion Proxy Config
 
   - name: Generate ssh.cfg Template
@@ -110,24 +108,39 @@
   tags: [ openshift_node_tasks ]
 
 
-#########################run openshift installer
+######################### Run OpenShift Installer
+
 
 - name: Run OpenShift Installer
   hosts: bastions
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
-  tags: [ run_openshift_installer ]
+  tags: [ installing_openshift ]
   tasks:
+
+    - debug: msg="{{item}}"
+      with_items: name_servers.stdout_lines
+    - name: Was the DNS Domain set for the route53 used
+      pause: prompt="Was the DNS Domain set for the route53 used"
+
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
       shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
       register: openshift_install_log
       tags: [ openshfit_installer ]
+
     - name: get openshfit credentials file
       shell: ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
+      tags: [ get_openshift_credentials ]
 
-#      shell: scp -r {{hostvars[groups['masters'][0]]['private_hostname']}}:/root/.kube /root
-
+######################### Create user-vols PVs
+- name: Create user-vols PVs
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ create_user_vol_pvs ]
+  tasks:
     - set_fact:
         pv_size: '10Gi'
         pv_list: "{{ nfs_shares }}"
@@ -137,14 +150,38 @@
       template: src=files/ocp-ml_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
       tags: [ testing ]
 
-
     - set_fact:
         pv_size: "{{user_vols_size}}"
         persistentVolumeReclaimPolicy: Recycle
     - name: Generate user vol PV file
       template: src=files/ocp-ml_userpvs.j2 dest=/root/userpvs-{{config}}-{{guid}}.yml
       tags: [ testing ]
-    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml | oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
       become: true
-    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml | oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
+    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
       become: true
+
+
+######################### Configure Logging
+- name: Configure Logging
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ configure_logging ]
+  tasks:
+    - shell: 'oadm new-project logging --node-selector=""'
+      ignore_errors: yes
+    - shell: ssh {{hostvars[groups['masters'][0]]['private_hostname']}} "oc apply -n openshift -f /usr/share/openshift/examples/infrastructure-templates/enterprise/logging-deployer.yaml"
+    - shell: 'oc project logging'
+    - shell: 'oc new-app logging-deployer-account-template -n logging'
+      ignore_errors: yes
+
+    - shell: 'oadm policy add-cluster-role-to-user oauth-editor system:serviceaccount:logging:logging-deployer'
+    - shell: 'oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd'
+    - shell: 'oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd'
+    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=uninstall -n logging'
+      ignore_errors: yes
+    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
+    - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
+    - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
