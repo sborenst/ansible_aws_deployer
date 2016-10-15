@@ -1,9 +1,13 @@
+
+
 - name: Starting environment deployment
   hosts: localhost
   connection: local
   gather_facts: False
   vars_files:
   - "../Environments/{{config}}_vars.yml"
+  - "../Environments/{{config}}_secret_vars.yml"
+
   tasks:
 
 ######################### Generate CF Template
@@ -77,10 +81,13 @@
 
 - name: Configuring nfs Host
   hosts: nfs
+  become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
   tasks:
     - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+#    - shell: 'chown -R {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+    - shell: 'chmod -R 0777 {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
 
 ####################### Startring OpenShift Specific Deployment
 
@@ -121,8 +128,9 @@
 
     - debug: msg="{{item}}"
       with_items: name_servers.stdout_lines
-    - name: Was the DNS Domain set for the route53 used
-      pause: prompt="Was the DNS Domain set for the route53 used"
+
+#    - name: Was the DNS Domain set for the route53 used
+#      pause: prompt="Was the DNS Domain set for the route53 used"
 
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
       shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
@@ -185,3 +193,12 @@
     - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
     - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
     - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
+    - shell: 'oc project default'
+- name: restart master api
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ restart_master_api ]
+  tasks:
+    - service: name=atomic-openshift-master-api state=restarted

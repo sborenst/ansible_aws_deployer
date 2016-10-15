@@ -603,7 +603,7 @@
       "Properties": {
         "AssociatePublicIpAddress": true,
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{nfs_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [
@@ -632,7 +632,7 @@
       "Properties": {
         "AssociatePublicIpAddress": true,
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{bastion_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [
@@ -646,7 +646,7 @@
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{etcd_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [
@@ -675,7 +675,7 @@
       "Properties": {
         "AssociatePublicIpAddress": true,
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{infranode_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [
@@ -707,7 +707,7 @@
       "Properties": {
         "AssociatePublicIpAddress": true,
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{master_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [
@@ -739,7 +739,7 @@
       "Properties": {
         "AssociatePublicIpAddress": true,
         "ImageId": "{{ami_id}}",
-        "InstanceType": "{{instance_type}}",
+        "InstanceType": "{{node_instance_type}}",
         "KeyName": "{{key_name}}",
         "InstanceMonitoring": "true",
         "SecurityGroups": [

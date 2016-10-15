@@ -4,20 +4,9 @@ ansible_ssh_user: ec2-user
 remote_user: ec2-user
 repo_version: "3.3"
 
-#### PRIVATE PASSWORDS VARS THAT YOU SHOULD NEVER COMMIT
-#bindPassword: 'ZZZZZ'
-bindPassword: 'zzzzzz'
 
-rhel_subscription_user: zzzzzz
-rhel_subscription_pass: 'zzzzzzz'
-
-subdomain_base_short: test5-ml
+subdomain_base_short: test-ml
 subdomain_base: "{{subdomain_base_short}}.opentlc.com"
-
-
-
-rhel_pool_id:
-  - "8a85f981544efea201544fba3ec64483"
 
 rhel_repos:
     - rhel-7-server-rpms
@@ -104,7 +93,12 @@ az_1_name: "ap-southeast-2a"
 az_2_name: "ap-southeast-2b"
 
 ami_id: "ami-286e4f4b"
-instance_type: "t2.medium"
+nfs_instance_type: "c3.large"
+bastion_instance_type: "t2.large"
+master_instance_type: "t2.large"
+etcd_instance_type: "{{master_instance_type}}"
+infranode_instance_type: "r3.xlarge"
+node_instance_type: "r3.xlarge" # r3.2xlarge
 key_name: "test-ml"
 
 #s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'

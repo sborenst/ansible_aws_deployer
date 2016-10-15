@@ -1,13 +1,13 @@
 ---
 # handlers file for basics
 
-- name: restart named
+- name: restart nfs
   service:
-    name: named
+    name: nfs
     enabled: true
     state: restarted
 
-- name: restore named context
+- name: restore nfs context
   command: restorecon -R {{ item }}
   with_items:
     - /var/named

@@ -10,7 +10,7 @@ spec:
   accessModes:
   - ReadWriteOnce
   nfs:
-    path: {{nfs_export_path}}/user_vols/vol{{pv}}
+    path: {{nfs_export_path}}/user-vols/vol{{pv}}
     server: {{hostvars[groups['nfs'][0]]['private_hostname']}}
   persistentVolumeReclaimPolicy: {{persistentVolumeReclaimPolicy}}
 ---
