@@ -27,4 +27,4 @@
 
 - name: generate ansible hosts file
   template: src=./files/inventory_templates/hosts.{{config}}.j2 dest=../workdir/hosts-{{config}}-{{guid}}
-  tags: [ dynamics_inventory, generate_ansible_host_file ]
+  tags: [ dynamic_inventory, generate_ansible_host_file ]
