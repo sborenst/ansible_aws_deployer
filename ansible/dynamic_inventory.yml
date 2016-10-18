@@ -16,7 +16,7 @@
       ansible_ssh_user: "{{ansible_ssh_user}}"
       remote_user: "{{remote_user}}"
       ansible_ssh_private_key_file: "~/.ssh/{{key_name}}.pem"
-  with_items:  group_hostnames.stdout_lines
+  with_items: '{{group_hostnames.stdout_lines}}'
   tags: [ dynamic_inventory, populate_hosts ]
 
 #- name: Print out host groups
