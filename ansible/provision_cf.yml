@@ -27,3 +27,4 @@
 - debug: msg="{{item}}"
   with_items: name_servers.stdout_lines
 - debug: msg="Need to create dns record on ipa\n ipa dnsrecord-add opentlc.com {{subdomain_base_short}} --ns-hostname={{name_servers.stdout_lines[0]}}. --ttl=100"
+  when: "{{idm}}"

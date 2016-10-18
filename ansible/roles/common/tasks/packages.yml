@@ -11,4 +11,5 @@
     - wget
     - ansible
     - vim
+    - git
   tags: [ install_basic_packages ]
