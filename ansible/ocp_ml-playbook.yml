@@ -136,8 +136,9 @@
 
     - name: Add log path to Ansible configuration
       lineinfile:
+        regexp: "^#log_path"
         dest: "/etc/ansible/ansible.cfg"
-        line: "log_path=/root/ansible.log"
+        line: "log_path = /root/ansible.log"
         state: present
 
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
