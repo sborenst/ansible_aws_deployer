@@ -1,7 +1,7 @@
 Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
    Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
    ForwardAgent yes
-   IdentityFile ~/.ssh/test-ml.pem
+   IdentityFile ~/.ssh/{{key_name}}.pem
    User ec2-user
    ControlMaster auto
    ControlPath /tmp/
