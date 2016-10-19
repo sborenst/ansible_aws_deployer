@@ -35,11 +35,11 @@
 ######################### LOCAL Bastion Proxy Config
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=../workdir/ssh-{{config}}-{{guid}}.cfg
+    template: src=files/ssh.cfg.j2 dest=workdir/ssh-{{config}}-{{guid}}.cfg
     tags: [ bastion_proxy_config, create_ssh_cfg_template ]
 
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
+    shell: "cat workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
     tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
 
 ######################### Run COMMON Tasks on all hosts
@@ -49,6 +49,7 @@
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{config}}_secret_vars.yml"
   roles:
     - common
   tags: [ common_tasks ]
@@ -84,6 +85,7 @@
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
+  tags: [ nfs_tasks ]
   tasks:
     - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
 #    - shell: 'chown -R {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
@@ -133,7 +135,7 @@
 #      pause: prompt="Was the DNS Domain set for the route53 used"
 
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
-      shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
+      shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml | tee installation.log"
       register: openshift_install_log
       tags: [ openshfit_installer ]
 
