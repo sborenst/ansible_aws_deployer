@@ -19,6 +19,7 @@ case "$1" in
 esac
 
 aws ec2 describe-instances --output text \
+  --region $3 \
   --filters "Name=instance-state-name,Values=running" \
     "Name=tag:Project,Values=$2" \
    $nodefilter \

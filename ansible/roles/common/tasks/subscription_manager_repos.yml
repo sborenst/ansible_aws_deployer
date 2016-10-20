@@ -4,15 +4,16 @@
   ignore_errors: true
 
 
-- name: list current repository files
-  shell: "ls -1 /etc/yum.repos.d/"
-  register: repodircontents
-  tags: [ configure_repos, remove_existing_repos ]
-
-- name: remove current repository files
-  file: path=/etc/yum.repos.d/{{ item }} state=absent
-  with_items: repodircontents.stdout_lines
-  tags: [ configure_repos, remove_existing_repos ]
+  # no need to remove current repos as generally we want to pull RHEL stuff from EC2 as available
+  #- name: list current repository files
+  #  shell: "ls -1 /etc/yum.repos.d/"
+  #  register: repodircontents
+  #  tags: [ configure_repos, remove_existing_repos ]
+  #
+  #- name: remove current repository files
+  #  file: path=/etc/yum.repos.d/{{ item }} state=absent
+  #  with_items: repodircontents.stdout_lines
+  #  tags: [ configure_repos, remove_existing_repos ]
 
 
 - name: register node with subscription-manager
@@ -25,12 +26,11 @@
   retries: 10
   delay: 1
   ignore_errors: no
-  with_items: rhel_pool_id
+  with_items: '{{rhel_pool_id}}'
 
 - name: disable all repos
   command: subscription-manager repos --disable=*
 
-
 - name: enable repos for rhel
   command: subscription-manager repos --enable "{{item}}"
-  with_items: rhel_repos
+  with_items: '{{rhel_repos}}'

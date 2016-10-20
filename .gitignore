@@ -1,0 +1,5 @@
+.ansible_facts
+*.retry
+workdir/cf.*.json
+workdir/hosts-*
+workdir/ssh-*

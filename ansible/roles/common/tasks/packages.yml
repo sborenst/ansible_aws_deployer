@@ -10,5 +10,6 @@
     - bind-utils
     - wget
     - ansible
-    - vim
+    - git
+    - vim-enhanced
   tags: [ install_basic_packages ]
