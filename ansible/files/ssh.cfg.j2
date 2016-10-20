@@ -9,17 +9,16 @@ Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
    ForwardAgent yes
    StrictHostKeyChecking no
 
- {% for host in groups['bastions'] %}
- Host {{ hostvars[host]['private_hostname'] }}
-   Hostname {{ hostvars[host]['private_hostname'] }}
-   User ec2-user
-   IdentityFile {{hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file']}}
-   ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
-   ForwardAgent yes
-   StrictHostKeyChecking no
+{% for host in groups['bastions'] %}
+Host {{ hostvars[host]['private_hostname'] }}
+ Hostname {{ hostvars[host]['private_hostname'] }}
+ User ec2-user
+ IdentityFile {{hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file']}}
+ ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
+ ForwardAgent yes
+ StrictHostKeyChecking no
 
-
- {% endfor %}
+{% endfor %}
 
 
 
