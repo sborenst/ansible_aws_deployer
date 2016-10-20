@@ -51,6 +51,7 @@
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{config}}_secret_vars.yml"
   roles:
     - common
   tags: [ common_tasks ]
@@ -192,6 +193,7 @@
     - shell: 'oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd'
     - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=uninstall -n logging'
       ignore_errors: yes
+    - shell: "sleep 30"
     - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
     - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
     - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
