@@ -1,0 +1,560 @@
+# vim: set ft=ansible:
+---
+- name: Starting environment deployment
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+  - "../Environments/{{config}}_vars.yml"
+  - "../Environments/{{config}}_secret_vars.yml"
+
+  tasks:
+
+######################### Generate CF Template
+######################### Launch CF Template
+
+  - name: Provisioning Environment
+    gather_facts: False
+    vars_files:
+    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{config}}_secret_vars.yml"
+    include: ./provision_cf.yml
+    tags: [ provisioning, gen_cf_templatem, provisiong_cf_template ]
+
+
+
+######################### Populate Dynamic Inventory
+
+  - name: Creating Dynamic Inventory
+    gather_facts: False
+    vars_files:
+    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{config}}_secret_vars.yml"
+    include: ./dynamic_inventory.yml
+    tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
+
+
+######################### LOCAL Bastion Proxy Config
+
+  - name: Generate ssh.cfg Template
+    template: src=files/ssh.cfg.j2 dest=../workdir/ssh-{{config}}-{{guid}}.cfg
+    tags: [ bastion_proxy_config, create_ssh_cfg_template ]
+## Need to add a check here to see if this was already done
+  - name: copy ssh.cfg into local ~.ssh/Config
+    shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
+    tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
+
+######################### Run COMMON Tasks on all hosts
+
+- name: Wait for readiness
+  hosts: localhost
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  gather_facts: False
+  become: false
+  any_errors_fatal: true
+  tags: [ wait_ssh ]
+  tasks:
+    - name: wait for host to be available
+      wait_for:
+        host: '{{ inventory_hostname }}' 
+        port: 22
+        search_regex: OpenSSH
+      with_items: "{{ groups['allhosts'] }}"
+
+- name: Configuring common Hosts
+  hosts: bastions,nfs,masters,infranodes,nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{config}}_secret_vars.yml"
+  roles:
+    - common
+  tags: [ common_tasks ]
+
+
+######################### Run bastion Tasks
+
+
+
+- name: Configuring Bastion Hosts
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - bastion
+  tags: [ bastion_tasks ]
+
+
+#########################Configuring nfs Host
+
+- name: Configuring nfs Host
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - nfs
+  tags: [ nfs_tasks ]
+
+- name: Configuring nfs Host
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ nfs_tasks ]
+  tasks:
+    - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+#    - shell: 'chown -R {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+    - shell: 'chmod -R 0777 {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+
+####################### Startring OpenShift Specific Deployment
+
+#########################Configuring openshfit-provisioner
+
+- name: Configuring openshfit-provisioner
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - openshift-provisioner
+  tags: [ openshift_provisioner_tasks ]
+
+
+#########################Configuring openshfit-nodes
+
+- name: Configuring openshfit-nodes
+  hosts: infranodes,nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  roles:
+    - openshift-node
+  tags: [ openshift_node_tasks ]
+
+
+######################### Run OpenShift Installer
+
+
+- name: Run OpenShift Installer
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ installing_openshift ]
+  tasks:
+
+    - name: Add log path to Ansible configuration
+      lineinfile:
+        regexp: "^#log_path"
+        dest: "/etc/ansible/ansible.cfg"
+        line: "log_path = /root/ansible.log"
+        state: present
+
+    - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
+      shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
+      register: openshift_install_log
+      tags: [ openshfit_installer ]
+
+    - name: get openshfit credentials file
+      shell: ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
+      tags: [ get_openshift_credentials ]
+
+######################### Create user-vols PVs
+- name: Create user-vols PVs
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ create_user_vol_pvs ]
+  tasks:
+    - set_fact:
+        pv_size: '10Gi'
+        pv_list: "{{ nfs_shares }}"
+        persistentVolumeReclaimPolicy: Retain
+
+    - name: Generate PV file
+      template: src=files/{{config}}_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
+      tags: [ testing ]
+
+    - set_fact:
+        pv_size: "{{user_vols_size}}"
+        persistentVolumeReclaimPolicy: Recycle
+    - name: Generate user vol PV file
+      template: src=files/ocp-ml_userpvs.j2 dest=/root/userpvs-{{config}}-{{guid}}.yml
+      tags: [ testing ]
+    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+      become: true
+    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
+      become: true
+
+
+######################### Configure Logging
+- name: Configure Logging
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ configure_logging ]
+  tasks:
+    - shell: 'oadm new-project logging --node-selector=""'
+      ignore_errors: yes
+    - shell: ssh {{hostvars[groups['masters'][0]]['private_hostname']}} "oc apply -n openshift -f /usr/share/openshift/examples/infrastructure-templates/enterprise/logging-deployer.yaml"
+    - shell: 'oc project logging'
+    - shell: 'oc new-app logging-deployer-account-template -n logging'
+      ignore_errors: yes
+
+    - shell: 'oadm policy add-cluster-role-to-user oauth-editor system:serviceaccount:logging:logging-deployer'
+    - shell: 'oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd'
+    - shell: 'oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd'
+    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=uninstall -n logging'
+      ignore_errors: yes
+    - shell: "sleep 30"
+    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
+    - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
+    - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
+    - shell: 'oc project default'
+- name: restart master api
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ restart_master_api ]
+  tasks:
+    - service: name=atomic-openshift-master state=restarted
+
+######################### Workshop specific
+- name: Workshop users
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_users ]
+  tasks:
+
+  # this would go a lot faster if we just ran a single for loop as a shell
+  # on the remote server
+  - name: Add users to htpasswd file 
+    command: "htpasswd -b /etc/origin/master/htpasswd {{ item }} openshift3"
+    with_sequence: start=0 end={{ user_vols }} format=user%02d
+
+  - name: Add administrative user to htpasswd file
+    command: "htpasswd -b /etc/origin/master/htpasswd admin openshift3"
+
+- name: Workshop projects
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_projects ]
+  tasks:
+  - name: Find current projects list
+    command: oc get projects
+    register: projects
+
+  # this could go faster if we could figure out a way to pass all items 
+  # to a script
+  - name: Create project
+    command: "oc adm new-project explore-{{ item }} --admin=user{{ item }}"
+    with_sequence: start=0 end={{ user_vols }} format=user%02d
+    when: item not in projects.stdout
+
+- name: Create Workshop NFS shares
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_nfs ]
+  tasks:
+    - name: Create workshop nfs directory
+      file:
+        name: '/srv/nfs/{{ item }}'
+        state: directory
+        mode: 0777
+        owner: nfsnobody
+        group: nfsnobody
+        recurse: True
+      with_items: '{{ workshop_shares }}'
+
+    - name: Create workshop exports file
+      file: path=/etc/exports.d/{{config}}-{{guid}}-workshop.exports state=touch mode=755
+
+    - name: Update workshop exports file
+      lineinfile:
+        dest: /etc/exports.d/{{config}}-{{guid}}-workshop.exports
+        line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
+        state: present
+      with_items: '{{ workshop_shares }}'
+      run_once: True
+
+    - name: Reload NFS exports
+      shell: "exportfs -r"
+
+- name: Workshop PVs
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, create_workshop_vol_pvs ]
+  tasks:
+    - set_fact:
+        pv_size: '10Gi'
+        pv_list: "{{ workshop_shares }}"
+        persistentVolumeReclaimPolicy: Retain
+
+    - name: Generate workshop PV file
+      template: src=files/{{config}}_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
+
+    - name: Create workshop PVs
+      shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+
+- name: Workshop infrastructure
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_infra ]
+  tasks:
+
+    - name: Give administrative user cluster-admin privileges
+      command: "oc adm policy add-cluster-role-to-user cluster-admin admin"
+
+    - name: Check for workshop-infra project
+      command: "oc get project workshop-infra"
+      register: result
+      ignore_errors: true
+
+    - name: Create workshop-infra project
+      command: "oc adm new-project workshop-infra --admin admin --node-selector='region=infra'"
+      when: result | failed
+
+    - name: Set workshop-infra SCC for anyuid
+      command: "oc adm policy add-scc-to-group anyuid system:serviceaccounts:workshop-infra"
+
+    - name: Add capabilities within anyuid which is not really ideal
+      command: "oc patch scc/anyuid --patch '{\"requiredDropCapabilities\":[\"MKNOD\",\"SYS_CHROOT\"]}'"
+
+    - name: Copy nexus.yaml to master
+      copy: 
+        src: files/bu-workshop/nexus.yaml
+        dest: /root/nexus.yaml
+
+    - name: Check if Nexus was already provisioned
+      command: "oc get service nexus -n workshop-infra"
+      register: install_nexus
+      ignore_errors: true
+
+    - name: Instantiate nexus from template
+      command: "oc create -f /root/nexus.yaml -n workshop-infra"
+      when: install_nexus | failed
+
+    # looks like we need a better check - it seems we're ready up to several
+    # seconds before the router finds out about us, so we might want another
+    # http check to make sure nexus is responding 
+    - name: Wait for Nexus to be running
+      command: "oc get dc/nexus -o yaml -n workshop-infra"
+      register: result
+      until: '"availableReplicas: 1" in result.stdout'
+      retries: 5
+      delay: 60
+
+    - name: Install EPEL (for jq)
+      package:
+        name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+        state: installed
+
+    - name: Disable EPEL
+      command: "yum-config-manager --disablerepo=epel"
+
+    - name: Install jq
+      package:
+        name: jq
+        state: present
+        enablerepo: epel
+
+    - name: Copy Nexus addrepo script
+      copy:
+        src: files/bu-workshop/addrepo.sh
+        dest: /root/addrepo.sh
+
+    - name: Check for redhat-ga repository in Nexus
+      uri: 
+        url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/redhat-ga"
+        status_code: 200
+      register: redhat_ga_out
+      ignore_errors: true
+
+    - name: Add redhat-ga repository for Nexus
+      shell: "NEXUS_BASE_URL=nexus.workshop-infra.svc.cluster.local:8081 bash /root/addrepo.sh redhat-ga https://maven.repository.redhat.com/ga/"
+      when: redhat_ga_out | failed
+
+    - name: Check for JBoss repository in Nexus
+      uri: 
+        url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/jboss"
+        status_code: 200
+      register: redhat_ga_out
+      ignore_errors: true
+
+    - name: Add redhat-ga repository for Nexus
+      shell: "NEXUS_BASE_URL=nexus.workshop-infra.svc.cluster.local:8081 bash /root/addrepo.sh jboss https://repository.jboss.org/nexus/content/repositories/public"
+      when: redhat_ga_out | failed
+
+    - name: Copy gitlab-template.yaml to master
+      copy: 
+        src: files/bu-workshop/gitlab-template.yaml
+        dest: /root/gitlab-template.yaml
+
+    - name: Check if Gitlab was already provisioned
+      command: "oc get service gitlab-ce -n workshop-infra"
+      register: install_gitlab
+      ignore_errors: true
+
+    - name: Instantiate Gitlab from template
+      shell: >
+        oc process -f /root/gitlab-template.yaml 
+        -v APPLICATION_HOSTNAME=gitlab-ce-workshop-infra.{{cloudapps_suffix}} 
+        -v GITLAB_ROOT_PASSWORD=password | oc create -f - -n workshop-infra
+      when: install_gitlab | failed
+      tags:
+        - "instantiate-gitlab"
+
+    - name: Wait for Gitlab to be running
+      command: "oc get dc/gitlab-ce -o yaml -n workshop-infra"
+      register: result
+      until: '" availableReplicas: 1" in result.stdout'
+      retries: 5
+      delay: 60
+      tags:
+        - "wait-for-gitlab"
+
+    - name: Set Gitlab internal hostname
+      set_fact: 
+        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'  
+      tags:
+        - "gitlab-hostname"
+
+    - name: Get root user token
+      uri:
+        url: 'http://gitlab-ce.workshop-infra.svc.cluster.local/api/v3/session'
+        body: 'login=root&password=password'
+        method: POST
+        status_code: 201
+      register: root_token_out
+      until: root_token_out|success
+      retries: 3
+      delay: 60
+      tags:
+        - "gitlab-get-root-token"
+
+    - name: Create root token fact
+      set_fact:
+        root_token: '{{root_token_out.json.private_token}}'
+      tags:
+        - "gitlab-root-token-fact"
+
+    # we might want to implement this as a single bash script - it would likely
+    # be much faster
+    - name: Create GitLab users
+      include: files/bu-workshop/create_gitlab_users.yml
+      with_sequence: start=0 end={{user_vols}} format=user%02g
+      tags:
+        - "gitlab-create-users"
+
+    # we might want to implement this as a single bash script - it would likely
+    # be much faster
+    - name: Import GitLab repos
+      include: files/bu-workshop/import_gitlab_repos.yml
+      with_sequence: start=0 end={{user_vols}} format=user%02g
+      tags:
+        - "gitlab-import-repos"
+
+    - name: Copy simple-java-s2i IS to server
+      copy:
+        src: files/bu-workshop/java-s2i-is.yaml
+        dest: /root/java-s2i-is.yaml
+      tags: 
+        - "copy-java-s2i-is"
+
+    - name: Create simple-java-s2i IS in openshift namespace
+      command: "oc create -f /root/java-s2i-is.yaml -n openshift"
+      tags:
+        - "create-java-s2i-is"
+
+    - name: Build workshop lab server
+      shell: >
+        oc new-app
+        --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#fy17-roadshow-work \
+        -e ROUTER_ADDRESS={{cloudapps_suffix}}
+        -e CONSOLE_ADDRESS=master.{{subdomain_base}}
+        -n workshop-infra;
+        oc expose service labs -n workshop-infra
+      tags:
+        - "build-workshop-labs"
+
+- name: Cache Docker images
+  hosts: nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_images ]
+  tasks:
+
+    - name: 'Pull image'
+      command: "docker pull {{ item }}"
+      with_items:
+        - "openshiftdemos/parksmap:0.4"
+        - "jorgemoralespou/s2i-java:latest"
+        - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
+        - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
+
+- name: Cache Java dependencies
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  vars:
+    workshop_repos:
+      - "nationalparks"
+      - "mlbparks"
+      - "parksmap-web"
+  tags: [ workshop, workshop_java_dependencies ]
+  tasks:
+    - name: Install Maven and Java
+      yum:
+        name: '{{ item }}'
+        state: present
+        enablerepo: "rhui-REGION-rhel-server-optional"
+      with_items:
+        - "maven"
+        - "java-1.8.0-openjdk-devel"
+
+    - name: Remove m2 folder
+      file:
+        path: "/home/ec2-user/.m2/repository"
+        state: absent
+
+    - name: Make repos directory
+      file:
+        path: "/home/ec2-user/repos"
+        state: directory
+
+    - name: Clone app repositories
+      git:
+        repo: 'https://github.com/openshift-roadshow/{{ item }}'
+        dest: "/home/ec2-user/repos/{{ item }}"
+      with_items: '{{workshop_repos}}'
+
+    - name: Deploy maven settings file
+      template:
+        src: files/bu-workshop/maven.xml.j2
+        dest: /home/ec2-user/maven.xml
+        mode: 0755
+        owner: ec2-user
+        
+    - name: Build and cache dependencies
+      shell: >
+        mvn -q -s /home/ec2-user/maven.xml -f /home/ec2-user/repos/{{ item }}/pom.xml install
+      with_items: '{{workshop_repos}}'
+
