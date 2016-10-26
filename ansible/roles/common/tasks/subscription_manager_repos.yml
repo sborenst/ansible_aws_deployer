@@ -1,23 +1,16 @@
+# vim: set ft=ansible:
+---
 - name: Force unregister before register
   redhat_subscription:
     state: absent
   ignore_errors: true
 
-
-  # no need to remove current repos as generally we want to pull RHEL stuff from EC2 as available
-  #- name: list current repository files
-  #  shell: "ls -1 /etc/yum.repos.d/"
-  #  register: repodircontents
-  #  tags: [ configure_repos, remove_existing_repos ]
-  #
-  #- name: remove current repository files
-  #  file: path=/etc/yum.repos.d/{{ item }} state=absent
-  #  with_items: repodircontents.stdout_lines
-  #  tags: [ configure_repos, remove_existing_repos ]
-
-
 - name: register node with subscription-manager
   redhat_subscription: state=present username="{{ rhel_subscription_user }}" password="{{ rhel_subscription_pass }}" autosubscribe=false
+  register: task_result
+  until: task_result | succeeded
+  retries: 10
+  delay: 5
 
 - name: attach node to subscription pool
   command: subscription-manager attach --pool {{ item }}
