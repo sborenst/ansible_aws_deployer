@@ -151,15 +151,9 @@ openshift_hosted_registry_storage_volume_size=10Gi
 [OSEv3:children]
 masters
 nodes
-etcd
 nfs
 
 [masters]
-{% for host in groups['masters'] %}
-{{ hostvars[host]['private_hostname'] }}
-{% endfor %}
-
-[etcd]
 {% for host in groups['masters'] %}
 {{ hostvars[host]['private_hostname'] }}
 {% endfor %}

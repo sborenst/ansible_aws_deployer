@@ -1,26 +1,25 @@
 Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
-   Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
-   ForwardAgent yes
-   IdentityFile ~/.ssh/{{key_name}}.pem
-   User ec2-user
-   ControlMaster auto
-   ControlPath /tmp/
-   ControlPersist 5m
-   ForwardAgent yes
-   StrictHostKeyChecking no
+  Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
+  ForwardAgent yes
+  IdentityFile ~/.ssh/{{key_name}}.pem
+  IdentitiesOnly yes
+  User ec2-user
+  ControlMaster auto
+  ControlPath /tmp/{{project_tag}}--%r@%h:%p
+  ControlPersist 5m
+  ForwardAgent yes
+  StrictHostKeyChecking no
 
 {% for host in groups['bastions'] %}
 Host {{ hostvars[host]['private_hostname'] }}
- Hostname {{ hostvars[host]['private_hostname'] }}
- User ec2-user
- IdentityFile {{hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file']}}
- ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
- ForwardAgent yes
- StrictHostKeyChecking no
+  Hostname {{ hostvars[host]['private_hostname'] }}
+  User ec2-user
+  IdentityFile {{hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file']}}
+  ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
+  ForwardAgent yes
+  StrictHostKeyChecking no
 
 {% endfor %}
-
-
 
 {% for host in groups['masters'] %}
 Host {{ hostvars[host]['private_hostname'] }}
@@ -30,7 +29,6 @@ Host {{ hostvars[host]['private_hostname'] }}
   ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
   ForwardAgent yes
   StrictHostKeyChecking no
-
 
 {% endfor %}
 
@@ -43,7 +41,6 @@ Host {{ hostvars[host]['private_hostname'] }}
   ForwardAgent yes
   StrictHostKeyChecking no
 
-
 {% endfor %}
 
 {% for host in groups['nodes'] %}
@@ -54,7 +51,6 @@ Host {{ hostvars[host]['private_hostname'] }}
   ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
   ForwardAgent yes
   StrictHostKeyChecking no
-
 
 {% endfor %}
 
@@ -67,6 +63,5 @@ Host {{ hostvars[host]['private_hostname'] }}
   ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
   ForwardAgent yes
   StrictHostKeyChecking no
-
 
 {% endfor %}

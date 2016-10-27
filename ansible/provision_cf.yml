@@ -1,7 +1,7 @@
 
 ######################### Generate CF Template
 - name: Generate CloudFormation Template
-  template: src=files/cf_templates/cf.{{config}}.template.j2 dest=workdir/cf.{{config}}.{{guid}}.json
+  template: src=files/cf_templates/cf.{{config}}.template.j2 dest=../workdir/cf.{{config}}.{{guid}}.json
   tags: [ provisioning, gen_cf_template]
 
 ######################### Launch CF Template
@@ -11,7 +11,7 @@
     state: "present"
     region: "{{aws_region}}"
     disable_rollback: false
-    template: "workdir/cf.{{config}}.{{guid}}.json"
+    template: "../workdir/cf.{{config}}.{{guid}}.json"
     tags:
       Stack: "project {{project_tag}}"
   tags: [ provisioning, provision_cf_template]
