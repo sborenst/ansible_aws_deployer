@@ -1,106 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
-    "VpcCidrBlock": {
-      "Type": "String",
-      "Default": "10.20.0.0/16"
-    },
-    "VpcName": {
-      "Type": "String",
-      "Default": "roadshow"
-    },
-    "MasterApiPort": {
-      "Type": "Number",
-      "Default": "443"
-    },
-    "SubnetCidrBlocks": {
-      "Type": "String",
-      "Default": "10.20.1.0/24"
-    },
-    "MasterInstanceType": {
-      "Type": "String",
-      "Default": "m4.large"
-    },
-    "MasterRootVolSize": {
-      "Type": "String",
-      "Default": "10"
-    },
-    "MasterDockerVolSize": {
-      "Type": "String",
-      "Default": "25"
-    },
-    "MasterEtcdVolSize": {
-      "Type": "String",
-      "Default": "25"
-    },
-    "MasterEmptyVolSize": {
-      "Type": "String",
-      "Default": "5"
-    },
-    "MasterEtcdVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "MasterEmptyVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "MasterDockerVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "MasterRootVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "InfraInstanceType": {
-      "Type": "String",
-      "Default": "m4.large"
-    },
-    "InfraRootVolSize": {
-      "Type": "String",
-      "Default": "30"
-    },
-    "InfraDockerVolSize": {
-      "Type": "String",
-      "Default": "25"
-    },
-    "InfraDockerVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "InfraRootVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "NodeInstanceType": {
-      "Type": "String",
-      "Default": "m4.large"
-    },
-    "NodeRootVolSize": {
-      "Type": "String",
-      "Default": "30"
-    },
-    "NodeDockerVolSize": {
-      "Type": "String",
-      "Default": "25"
-    },
-    "NodeDockerVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "NodeEmptyVolSize": {
-      "Type": "String",
-      "Default": "25"
-    },
-    "NodeEmptyVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    },
-    "NodeRootVolType": {
-      "Type": "String",
-      "Default": "gp2"
-    }
   },
   "Mappings": {
     "RegionMapping": {
@@ -433,7 +333,7 @@
             "AMI"
           ]
         },
-        "InstanceType": "m4.xlarge",
+        "InstanceType": "m4.4xlarge",
         "KeyName": "roadshow",
         "SecurityGroupIds": [
           {
@@ -505,7 +405,7 @@
             "AMI"
           ]
         },
-        "InstanceType": "m4.xlarge",
+        "InstanceType": "m4.4xlarge",
         "KeyName": "roadshow",
         "SecurityGroups": [
           {
