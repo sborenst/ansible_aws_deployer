@@ -2,7 +2,6 @@
 ### Common Vars
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
-repo_version: "3.3"
 
 
 subdomain_base_short: "{{guid}}"
@@ -44,7 +43,6 @@ idm: false
 install_metrics: true
 install_logging: true
 #### Vars for the Ansible hosts file
-install_metrics: true
 master_api_port: 443
 multi_tenant_setting: "os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'"
 master_lb_dns: "master.{{subdomain_base}}"
