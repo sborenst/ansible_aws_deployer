@@ -7,15 +7,15 @@
     - "bu-workshop_vars.yml"
   tasks:
 
-  - name: Add user{{user}} to htpasswd file 
+  - name: 'Add user{{user}} to htpasswd file' 
     command: "htpasswd -b /etc/origin/master/htpasswd {{ user }} openshift3"
 
-  - name: Check for explore-{{user}} project
+  - name: 'Check for explore-{{user}} project'
     command: "oc get project explore-{{user}}"
     register: project_out
     ignore_errors: true
 
-  - name: Create explore-{{user}} project
+  - name: ;Create explore-{{user}} project;
     command: "oc new-project explore-{{user}} --as=user{{user}}"
     when: project_out | failed
 
@@ -54,7 +54,7 @@
     retries: 3
     delay: 60
   
-  - name: Check if user{{user}}'s project exists
+  - name: 'Check if user{{user}}'s project exists'
     uri:
       url: 'http://{{gitlab_hostname}}/api/v3/projects/user{{user}}%2Fnationalparks'
       HEADER_PRIVATE-TOKEN: "{{token_out.json.private_token}}"

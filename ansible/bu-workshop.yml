@@ -420,6 +420,11 @@
       tags:
         - "create-java-s2i-is"
 
+    - name: Check for workshop lab build
+      command: "oc get svc/labs -n workshop-infra"
+      ignore_errors: true
+      register: labs_service_out
+
     - name: Build workshop lab server
       shell: >
         oc new-app
@@ -428,6 +433,7 @@
         -e CONSOLE_ADDRESS=master.{{subdomain_base}}
         -n workshop-infra;
         oc expose service labs -n workshop-infra
+      when: labs_service_out | failed
       tags:
         - "build-workshop-labs"
 
