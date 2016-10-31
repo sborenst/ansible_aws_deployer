@@ -123,6 +123,9 @@ CloudFormation template
 (`ansible/files/cf_templates/cf.bu-workshop.template.j2`) in the application
 autoscaling group.
 
+Additionally, you will need to edit the `HostedZoneId` in the CloudFormation
+template to correspond to your own DNS zone.
+
 ### Ansible
 Once you have installed your prerequisites and have configured all settings and
 files, simply run Ansible like so:
