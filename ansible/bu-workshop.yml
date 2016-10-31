@@ -450,7 +450,7 @@
       ignore_errors: true
 
     - name: Create project request template in default project
-      command: "oc create -f /root/project-template.yaml -n default || oc replace -f /root/project-template.yaml -n default"
+      shell: "oc create -f /root/project-template.yaml -n default || oc replace -f /root/project-template.yaml -n default"
       when: request_template | failed
 
     - name: Update master config file to use project request template
