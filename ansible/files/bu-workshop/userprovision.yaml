@@ -15,7 +15,7 @@
     register: project_out
     ignore_errors: true
 
-  - name: ;Create explore-{{user}} project;
+  - name: 'Create explore-{{user}} project'
     command: "oc new-project explore-{{user}} --as=user{{user}}"
     when: project_out | failed
 
