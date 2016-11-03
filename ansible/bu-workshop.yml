@@ -47,11 +47,10 @@
 ######################### Run COMMON Tasks on all hosts
 
 - name: Wait for readiness
-  hosts: localhost
+  hosts: bastions
   vars_files:
     - "../Environments/{{config}}_vars.yml"
   gather_facts: False
-  become: false
   any_errors_fatal: true
   tags: [ wait_ssh ]
   tasks:
@@ -65,6 +64,7 @@
 - name: Configuring common Hosts
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
+  any_errors_fatal: true
   vars_files:
     - "../Environments/{{config}}_vars.yml"
     - "../Environments/{{config}}_secret_vars.yml"
@@ -125,7 +125,7 @@
 
 #########################Configuring openshfit-nodes
 
-- name: Configuring openshfit-nodes
+- name: Configuring openshift-nodes
   hosts: infranodes,nodes
   become: yes
   vars_files:
@@ -403,7 +403,7 @@
       command: "oc get dc/gitlab-ce -o yaml -n workshop-infra"
       register: result
       until: '" availableReplicas: 1" in result.stdout'
-      retries: 5
+      retries: 8
       delay: 60
       tags:
         - "wait-for-gitlab"
@@ -436,6 +436,23 @@
       when: labs_service_out | failed
       tags:
         - "build-workshop-labs"
+
+- name: GitLab nfs permissions hack
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_nfs_hack ]
+  tasks:
+
+    - name: Fix ownership of git-data
+      shell: "chown -R 998:root /srv/nfs/gitlab-data"
+
+    - name: Fix permission on git-data
+      shell: "chmod -R 700 /srv/nfs/gitlab-data/git-data"
+
+    - name: Fix permission on git-data/repositories
+      shell: "chmod -R 2770 /srv/nfs/gitlab-data/git-data/repositories"
 
 - name: Project Request Template
   hosts: masters

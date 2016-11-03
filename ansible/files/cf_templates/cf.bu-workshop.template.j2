@@ -1,7 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Parameters": {
-  },
+  "Parameters": {},
   "Mappings": {
     "RegionMapping": {
       "us-east-1": {
@@ -543,6 +542,30 @@
             "Value": "{{project_tag}}"
           }
         ]
+      }
+    },
+    "RegistryS3": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "{{config}}-{{guid}}",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "s3-{{config}}-{{guid}}"
+          },
+          {
+            "Key": "Project",
+            "Value": "{{project_tag}}"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RegistryS3Output": {
+      "Description": "The ID of the S3 Bucket",
+      "Value": {
+        "Ref": "RegistryS3"
       }
     }
   }
