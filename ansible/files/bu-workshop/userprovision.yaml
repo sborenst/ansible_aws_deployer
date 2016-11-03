@@ -16,7 +16,7 @@
     ignore_errors: true
 
   - name: 'Create explore-{{user}} project'
-    command: "oc new-project explore-{{user}} --as=user{{user}}"
+    command: "oc new-project explore-{{user}} --as=user{{user}} --skip-config-write"
     when: project_out | failed
 
   - name: 'Check for user{{user}} in GitLab'
