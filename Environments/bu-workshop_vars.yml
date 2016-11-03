@@ -8,6 +8,7 @@ subdomain_base_short: "{{guid}}"
 subdomain_base: "{{subdomain_base_short}}.openshift3roadshow.com"
 
 rhel_repos:
+  - rhel-7-server-rpms
   - rhel-7-server-extras-rpms
   - rhel-7-server-ose-{{repo_version}}-rpms
 
@@ -104,9 +105,5 @@ etcd_instance_type: "{{master_instance_type}}"
 infranode_instance_type: "r3.xlarge"
 node_instance_type: "r3.xlarge" # r3.2xlarge
 key_name: "roadshow"
-
-#s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'
-#s3_registry_bucket_name: "docker-registry"
-#s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
 cf_template_description: "{{config}}-{{guid}} template "
