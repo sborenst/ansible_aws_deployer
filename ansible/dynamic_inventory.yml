@@ -4,6 +4,7 @@
 - name: Get Hosts from aws
   shell: ../ansible/scripts/cf-list-hosts.sh all {{config}}-{{guid}} {{aws_region}}
   register: group_hostnames
+  failed_when: group_hostnames.stderr
   tags: [ dynamic_inventory, get_hosts ]
 
 - name: Add Hosts
