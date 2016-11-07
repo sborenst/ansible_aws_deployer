@@ -47,11 +47,10 @@
 ######################### Run COMMON Tasks on all hosts
 
 - name: Wait for readiness
-  hosts: localhost
+  hosts: bastions
   vars_files:
     - "../Environments/{{config}}_vars.yml"
   gather_facts: False
-  become: false
   any_errors_fatal: true
   tags: [ wait_ssh ]
   tasks:
@@ -65,6 +64,7 @@
 - name: Configuring common Hosts
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
+  any_errors_fatal: true
   vars_files:
     - "../Environments/{{config}}_vars.yml"
     - "../Environments/{{config}}_secret_vars.yml"
@@ -125,7 +125,7 @@
 
 #########################Configuring openshfit-nodes
 
-- name: Configuring openshfit-nodes
+- name: Configuring openshift-nodes
   hosts: infranodes,nodes
   become: yes
   vars_files:
@@ -190,76 +190,17 @@
     - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
       become: true
 
-
-######################### Configure Logging
-- name: Configure Logging
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ configure_logging ]
-  tasks:
-    - shell: 'oadm new-project logging --node-selector=""'
-      ignore_errors: yes
-    - shell: ssh {{hostvars[groups['masters'][0]]['private_hostname']}} "oc apply -n openshift -f /usr/share/openshift/examples/infrastructure-templates/enterprise/logging-deployer.yaml"
-    - shell: 'oc project logging'
-    - shell: 'oc new-app logging-deployer-account-template -n logging'
-      ignore_errors: yes
-
-    - shell: 'oadm policy add-cluster-role-to-user oauth-editor system:serviceaccount:logging:logging-deployer'
-    - shell: 'oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd'
-    - shell: 'oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd'
-    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=uninstall -n logging'
-      ignore_errors: yes
-    - shell: "sleep 30"
-    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
-    - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
-    - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
-    - shell: 'oc project default'
-- name: restart master api
-  hosts: masters
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ restart_master_api ]
-  tasks:
-    - service: name=atomic-openshift-master state=restarted
-
 ######################### Workshop specific
-- name: Workshop users
+- name: Workshop admins
   hosts: masters
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_users ]
+  tags: [ workshop, workshop_admins ]
   tasks:
-
-  # this would go a lot faster if we just ran a single for loop as a shell
-  # on the remote server
-  - name: Add users to htpasswd file 
-    command: "htpasswd -b /etc/origin/master/htpasswd {{ item }} openshift3"
-    with_sequence: start=0 end={{ user_vols }} format=user%02d
 
   - name: Add administrative user to htpasswd file
     command: "htpasswd -b /etc/origin/master/htpasswd admin openshift3"
-
-- name: Workshop projects
-  hosts: masters
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_projects ]
-  tasks:
-  - name: Find current projects list
-    command: oc get projects
-    register: projects
-
-  # this could go faster if we could figure out a way to pass all items 
-  # to a script
-  - name: Create project
-    command: "oc new-project explore-{{ item }} --as=user{{ item }}"
-    with_sequence: start=0 end={{ user_vols }} format=user%02d
-    when: item not in projects.stdout
 
 - name: Create Workshop NFS shares
   hosts: nfs
@@ -427,51 +368,10 @@
       command: "oc get dc/gitlab-ce -o yaml -n workshop-infra"
       register: result
       until: '" availableReplicas: 1" in result.stdout'
-      retries: 5
+      retries: 8
       delay: 60
       tags:
         - "wait-for-gitlab"
-
-    - name: Set Gitlab internal hostname
-      set_fact: 
-        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'  
-      tags:
-        - "gitlab-hostname"
-
-    - name: Get root user token
-      uri:
-        url: 'http://gitlab-ce.workshop-infra.svc.cluster.local/api/v3/session'
-        body: 'login=root&password=password'
-        method: POST
-        status_code: 201
-      register: root_token_out
-      until: root_token_out|success
-      retries: 3
-      delay: 60
-      tags:
-        - "gitlab-get-root-token"
-
-    - name: Create root token fact
-      set_fact:
-        root_token: '{{root_token_out.json.private_token}}'
-      tags:
-        - "gitlab-root-token-fact"
-
-    # we might want to implement this as a single bash script - it would likely
-    # be much faster
-    - name: Create GitLab users
-      include: files/bu-workshop/create_gitlab_users.yml
-      with_sequence: start=0 end={{user_vols}} format=user%02g
-      tags:
-        - "gitlab-create-users"
-
-    # we might want to implement this as a single bash script - it would likely
-    # be much faster
-    - name: Import GitLab repos
-      include: files/bu-workshop/import_gitlab_repos.yml
-      with_sequence: start=0 end={{user_vols}} format=user%02g
-      tags:
-        - "gitlab-import-repos"
 
     - name: Copy simple-java-s2i IS to server
       copy:
@@ -485,6 +385,11 @@
       tags:
         - "create-java-s2i-is"
 
+    - name: Check for workshop lab build
+      command: "oc get svc/labs -n workshop-infra"
+      ignore_errors: true
+      register: labs_service_out
+
     - name: Build workshop lab server
       shell: >
         oc new-app
@@ -493,8 +398,26 @@
         -e CONSOLE_ADDRESS=master.{{subdomain_base}}
         -n workshop-infra;
         oc expose service labs -n workshop-infra
+      when: labs_service_out | failed
       tags:
         - "build-workshop-labs"
+
+- name: GitLab nfs permissions hack
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../Environments/{{config}}_vars.yml"
+  tags: [ workshop, workshop_nfs_hack ]
+  tasks:
+
+    - name: Fix ownership of git-data
+      shell: "chown -R 998:root /srv/nfs/gitlab-data"
+
+    - name: Fix permission on git-data
+      shell: "chmod -R 700 /srv/nfs/gitlab-data/git-data"
+
+    - name: Fix permission on git-data/repositories
+      shell: "chmod -R 2770 /srv/nfs/gitlab-data/git-data/repositories"
 
 - name: Project Request Template
   hosts: masters
@@ -515,7 +438,7 @@
       ignore_errors: true
 
     - name: Create project request template in default project
-      command: "oc create -f /root/project-template.yaml -n default || oc replace -f /root/project-template.yaml -n default"
+      shell: "oc create -f /root/project-template.yaml -n default || oc replace -f /root/project-template.yaml -n default"
       when: request_template | failed
 
     - name: Update master config file to use project request template
@@ -532,17 +455,59 @@
         state: restarted
       when: master_config.changed
 
-- name: Cache Docker images
-  hosts: nodes
+- name: Workshop Users
+  hosts: masters
   become: yes
   vars_files:
     - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_images ]
+  tags: [ workshop, workshop_users ]
   tasks:
 
-    - name: 'Pull image'
-      command: "docker pull {{ item }}"
-      with_items: '{{ workshop_images }}'
+    - name: Add log path to Ansible configuration
+      lineinfile:
+        regexp: "^#log_path"
+        dest: "/etc/ansible/ansible.cfg"
+        line: "log_path = /root/ansible.log"
+        state: present
+
+    - name: Copy vars file to master
+      copy:
+        src: "../Environments/{{config}}_vars.yml"
+        dest: "/root/{{config}}_vars.yml"
+
+    - name: Copy user provision Ansible script remotely
+      copy:
+        src: files/bu-workshop/userprovision.yaml
+        dest: /root/userprovision.yaml
+
+    - name: Set Gitlab internal hostname
+      set_fact: 
+        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'  
+
+    - name: Get root user token
+      uri:
+        url: 'http://gitlab-ce.workshop-infra.svc.cluster.local/api/v3/session'
+        body: 'login=root&password=password'
+        method: POST
+        status_code: 201
+      register: root_token_out
+      until: root_token_out|success
+      retries: 3
+      delay: 60
+
+    - name: Create root token fact
+      set_fact:
+        root_token: '{{root_token_out.json.private_token}}'
+
+    - name: Execute user provision Ansible script remotely
+      shell: >
+        ansible-playbook 
+        -i localhost /root/userprovision.yaml 
+        -e config={{config}} 
+        -e user={{item}} 
+        -e root_token={{root_token}} 
+        -e gitlab_hostname={{gitlab_hostname}}
+      with_sequence: start=0 end={{ user_vols }} format=%02d
 
 - name: Cache Java dependencies
   hosts: masters

@@ -8,6 +8,7 @@ subdomain_base_short: "{{guid}}"
 subdomain_base: "{{subdomain_base_short}}.openshift3roadshow.com"
 
 rhel_repos:
+  - rhel-7-server-rpms
   - rhel-7-server-extras-rpms
   - rhel-7-server-ose-{{repo_version}}-rpms
 
@@ -21,8 +22,6 @@ nfs_export_path: /srv/nfs
 
 nfs_shares:
   - user-vols
-  - es-storage
-  - logging
 
 workshop_shares:
   - postgres
@@ -34,7 +33,23 @@ workshop_shares:
 user_vols: 100
 user_vols_size: 5Gi
 
-workshop_images:
+cache_images:
+  - "openshift3/logging-elasticsearch"
+  - "openshift3/logging-deployer"
+  - "openshift3/metrics-cassandra"
+  - "openshift3/metrics-hawkular-metrics"
+  - "openshift3/metrics-heapster"
+  - "openshift3/logging-auth-proxy"
+  - "openshift3/ose-haproxy-router"
+  - "openshift3/ose-deployer"
+  - "openshift3/logging-deployment"
+  - "openshift3/logging-fluentd"
+  - "openshift3/logging-kibana"
+  - "openshift3/metrics-deployer"
+  - "openshift3/ose-pod"
+  - "openshift3/ose-docker-registry"
+  - "openshift3/registry-console"
+  - "openshift3/logging-curator"
   - "openshiftdemos/parksmap:0.4"
   - "jorgemoralespou/s2i-java:latest"
   - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
@@ -97,16 +112,12 @@ dopt_domain_name: "{{ aws_region }}.compute.internal"
 rtb_public_name_tag: "{{subdomain_base}}-public"
 rtb_private_name_tag: "{{subdomain_base}}-private"
 
-nfs_instance_type: "c3.large"
-bastion_instance_type: "t2.large"
-master_instance_type: "t2.large"
-etcd_instance_type: "{{master_instance_type}}"
-infranode_instance_type: "r3.xlarge"
-node_instance_type: "r3.xlarge" # r3.2xlarge
+nfs_instance_type: "t2.small"
+bastion_instance_type: "t2.medium"
+master_instance_type: "m4.xlarge"
+infranode_instance_type: "m4.4xlarge"
+node_instance_type: "m4.xlarge"
+num_nodes: 24
 key_name: "roadshow"
-
-#s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'
-#s3_registry_bucket_name: "docker-registry"
-#s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
 cf_template_description: "{{config}}-{{guid}} template "

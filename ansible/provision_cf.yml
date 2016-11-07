@@ -15,7 +15,11 @@
     tags:
       Stack: "project {{project_tag}}"
   tags: [ provisioning, provision_cf_template]
+  register: cloudformation_out
 
+- name: Store S3 Bucket ID
+  set_fact:
+    s3_bucket: "{{ cloudformation_out.stack_outputs.RegistryS3Output }}"
 
 - name: get route53 hosts
   shell: aws route53 list-hosted-zones-by-name --dns-name {{zone_public_dns}} --output text | awk '/zonepub/ {print $3}'
