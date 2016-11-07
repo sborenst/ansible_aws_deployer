@@ -190,41 +190,6 @@
     - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
       become: true
 
-
-######################### Configure Logging
-- name: Configure Logging
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ configure_logging ]
-  tasks:
-    - shell: 'oadm new-project logging --node-selector=""'
-      ignore_errors: yes
-    - shell: ssh {{hostvars[groups['masters'][0]]['private_hostname']}} "oc apply -n openshift -f /usr/share/openshift/examples/infrastructure-templates/enterprise/logging-deployer.yaml"
-    - shell: 'oc project logging'
-    - shell: 'oc new-app logging-deployer-account-template -n logging'
-      ignore_errors: yes
-
-    - shell: 'oadm policy add-cluster-role-to-user oauth-editor system:serviceaccount:logging:logging-deployer'
-    - shell: 'oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd'
-    - shell: 'oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd'
-    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=uninstall -n logging'
-      ignore_errors: yes
-    - shell: "sleep 30"
-    - shell: 'oc new-app logging-deployer-template --param ES_PVC_SIZE=9Gi --param PUBLIC_MASTER_URL=https://{{master_lb_dns}}:8443 --param KIBANA_HOSTNAME=kibana.{{cloudapps_suffix}} --param IMAGE_VERSION=3.3.0 --param IMAGE_PREFIX=registry.access.redhat.com/openshift3/        --param KIBANA_NODESELECTOR=region=infra --param ES_NODESELECTOR=region=infra --param MODE=install -n logging'
-    - shell: 'oc label nodes --all logging-infra-fluentd=true --overwrite=true'
-    - shell: 'oc label node -l openshift_schedulable=False --overwrite logging-infra-fluentd=false  --overwrite=true'
-    - shell: 'oc project default'
-- name: restart master api
-  hosts: masters
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ restart_master_api ]
-  tasks:
-    - service: name=atomic-openshift-master state=restarted
-
 ######################### Workshop specific
 - name: Workshop admins
   hosts: masters
@@ -543,18 +508,6 @@
         -e root_token={{root_token}} 
         -e gitlab_hostname={{gitlab_hostname}}
       with_sequence: start=0 end={{ user_vols }} format=%02d
-
-- name: Cache Docker images
-  hosts: nodes
-  become: yes
-  vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_images ]
-  tasks:
-
-    - name: 'Pull image'
-      command: "docker pull {{ item }}"
-      with_items: '{{ workshop_images }}'
 
 - name: Cache Java dependencies
   hosts: masters

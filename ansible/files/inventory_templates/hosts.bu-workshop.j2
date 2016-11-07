@@ -73,13 +73,7 @@ openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 
 ###########################################################################
 
 # Enable cluster metrics
-use_cluster_metrics={{ install_metrics }}
-
 openshift_hosted_metrics_deploy={{install_metrics}}
-
-openshift_hosted_metrics_public_url=https://metrics.{{cloudapps_suffix}}/hawkular/metrics
-
-
 openshift_hosted_metrics_storage_kind=nfs
 openshift_hosted_metrics_storage_access_modes=['ReadWriteOnce']
 openshift_hosted_metrics_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
@@ -87,29 +81,19 @@ openshift_hosted_metrics_storage_nfs_directory=/srv/nfs
 openshift_hosted_metrics_storage_nfs_options='*(rw,root_squash)'
 openshift_hosted_metrics_storage_volume_name=metrics
 openshift_hosted_metrics_storage_volume_size=10Gi
+openshift_hosted_metrics_public_url=https://metrics.{{cloudapps_suffix}}/hawkular/metrics
 
-
+# Enable cluster logging
+openshift_hosted_logging_deploy={{install_logging}}
+openshift_hosted_logging_storage_kind=nfs
+openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
+openshift_hosted_logging_storage_nfs_directory=/srv/nfs
+openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
+openshift_hosted_logging_storage_volume_name=logging
+openshift_hosted_logging_storage_volume_size=10Gi
+openshift_hosted_logging_hostname=kibana.{{cloudapps_suffix}}
+openshift_hosted_logging_elasticsearch_cluster_size=1
 openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
-#openshift_hosted_logging_deploy={{install_logging}}
-
-#openshift_hosted_logging_storage_kind=nfs
-#openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
-#openshift_hosted_logging_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
-
-#openshift_hosted_logging_storage_nfs_directory=/srv/nfs
-#openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
-#openshift_hosted_logging_storage_volume_name=logging
-#openshift_hosted_logging_storage_volume_size=10Gi
-
-
-#openshift_hosted_logging_hostname=https://kibana.{{cloudapps_suffix}}
-#openshift_hosted_logging_elasticsearch_cluster_size=1
-#openshift_hosted_logging_master_public_url='https://{{master_lb_dns}}:8443'
-
-#openshift_hosted_logging_elasticsearch_pvc_size=9Gi
-#openshift_hosted_logging_elasticsearch_nodeselector="region=infra"
-#openshift_hosted_logging_kibana_nodeselector="region=infra"
-#openshift_hosted_logging_curator_nodeselector="logging=true"
 
 
 ###########################################################################
