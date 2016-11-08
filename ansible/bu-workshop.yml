@@ -304,6 +304,15 @@
       retries: 5
       delay: 60
 
+    - name: Wait for Nexus to be happy
+      uri:
+        url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/"
+        status_code: 200
+      register: nexus_happy
+      until: nexus_happy | success
+      retries: 5
+      delay: 60
+
     - name: Install EPEL (for jq)
       package:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
