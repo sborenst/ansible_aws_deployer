@@ -1,0 +1,20 @@
+- name: Starting environment deployment
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+  - "../Environments/{{config}}_vars.yml"
+  - "../Environments/{{config}}_secret_vars.yml"
+
+  tasks:
+######################### Launch CF Template
+    - name: launch cloudformation template
+      cloudformation:
+        stack_name: "{{project_tag}}"
+        state: "absent"
+        region: "{{aws_region}}"
+        disable_rollback: false
+        template: "./workdir/cf.{{config}}.{{guid}}.json"
+        tags:
+          Stack: "project {{project_tag}}-{{guid}}"
+      tags: [ destroying, destroy_cf_deployment ]
