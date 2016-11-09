@@ -155,7 +155,36 @@ bucket is called `bu-workshop-atlanta`.
 Just go into your AWS account to the CloudFormation section in the region where
 you provisioned, find the deployed stack, and delete it.
 
+### SSH config
+This Ansible script places entries into your `~/.ssh/config`. It is recommended
+that you remove them once you are done with your environment.
+
 ## Troubleshooting
 Information will be added here as problems are solved. So far it's pretty
 vanilla, but quite slow. Expect at least an hour for deployment, if not two or
 more if you are far from the system(s).
+
+### EC2 instability
+It has been seen that, on occasion, EC2 is generally unstable. This manifests in
+various ways:
+
+* The autoscaling group for the nodes takes an extremely long time to deploy, or
+  will never complete deploying
+
+* Individual EC2 instances may have terrible performance, which can result in
+  nodes that seem to be "hung" despite being reachable via SSH.
+
+There is not much that can be done in this circumstance besides starting over
+(in a different region).
+
+### Re-Running
+While Ansible is idempotent and supports being re-run, there are some known
+issues with doing so. Specifically:
+
+* You should skip the tag `nfs_tasks` with the `--skip-tags` option if you
+  re-run the playbook **after** the NFS server has been provisioned and
+  configured. The playbook is not safe for re-run and will fail.
+
+* You may also wish to skip the tag `bastion_proxy_config` when re-running, as
+  the tasks associated with this play will re-write the same entries to your SSH
+  config file, which could result in hosts becoming unexpectedly unreachable.
