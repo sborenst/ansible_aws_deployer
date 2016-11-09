@@ -4,34 +4,40 @@
   "Mappings": {
     "RegionMapping": {
       "us-east-1": {
-        "AMI": "ami-2051294a"
+        "AMI": "ami-b63769a1"
+      },
+      "us-east-2": {
+        "AMI": "ami-0932686c"
       },
       "us-west-1": {
-        "AMI": "ami-d1315fb1"
+        "AMI": "ami-2cade64c"
       },
       "us-west-2": {
-        "AMI": "ami-775e4f16"
+        "AMI": "ami-6f68cf0f"
+      },
+      "ap-south-1": {
+        "AMI": "ami-7c9bef13"
       },
       "eu-west-1": {
-        "AMI": "ami-8b8c57f8"
+        "AMI": "ami-02ace471"
       },
       "eu-central-1": {
-        "AMI": "ami-875042eb"
+        "AMI": "ami-e4c63e8b"
       },
       "ap-northeast-1": {
-        "AMI": "ami-0dd8f963"
+        "AMI": "ami-5de0433c"
       },
       "ap-northeast-2": {
-        "AMI": "ami-44db152a"
+        "AMI": "ami-6447930a"
       },
       "ap-southeast-1": {
-        "AMI": "ami-3f03c55c"
+        "AMI": "ami-2c95344f"
       },
       "ap-southeast-2": {
-        "AMI": "ami-e0c19f83"
+        "AMI": "ami-39ac915a"
       },
       "sa-east-1": {
-        "AMI": "ami-27b3094b"
+        "AMI": "ami-7de77b11"
       }
     },
     "DNSMapping": {
@@ -292,7 +298,8 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
-              "VolumeSize": 20
+              "VolumeSize": 15,
+              "VolumeType": "gp2"
             }
           }
         ]
@@ -363,7 +370,9 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
-              "VolumeSize": 30
+              "VolumeSize": 80,
+              "VolumeType": "io1",
+              "Iops": 2400
             }
           }
         ]
@@ -415,7 +424,9 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
-              "VolumeSize": 30
+              "VolumeSize": 80,
+              "VolumeType": "io1",
+              "Iops": 2400
             }
           }
         ]
