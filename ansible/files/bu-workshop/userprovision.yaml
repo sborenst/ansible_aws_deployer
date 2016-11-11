@@ -8,7 +8,7 @@
   tasks:
 
   - name: 'Add user{{user}} to htpasswd file' 
-    command: "htpasswd -b /etc/origin/master/htpasswd {{ user }} openshift3"
+    command: "htpasswd -b /etc/origin/master/htpasswd user{{ user }} openshift3"
 
   - name: 'Check for explore-{{user}} project'
     command: "oc get project explore-{{user}}"

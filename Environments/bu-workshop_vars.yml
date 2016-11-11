@@ -51,6 +51,7 @@ cache_images:
   - "openshift3/registry-console"
   - "openshift3/logging-curator"
   - "openshiftdemos/parksmap:0.4"
+  - "openshift3/jenkins-1-rhel7"
   - "jorgemoralespou/s2i-java:latest"
   - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
   - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
