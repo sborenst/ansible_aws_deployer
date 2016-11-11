@@ -259,6 +259,26 @@
   tags: [ workshop, workshop_infra ]
   tasks:
 
+    - name: 'Copy pipelines extension script to server'
+      copy:
+        src: files/bu-workshop/tech-preview.js
+        dest: /etc/origin/master/tech-preview.js
+
+    - name: 'Check for the extensionScripts directive in the master config'
+      command: "grep extensionScripts /etc/origin/master/master-config.yaml"
+      ignore_errors: true
+      register: grep_script_out
+
+    - name: Update master config to reference extension script
+      shell:
+        sed -i -s '/assetConfig:/a\  extensionScripts:\n\    - /etc/origin/master/tech-preview.js' /etc/origin/master/master-config.yaml
+      register: tech_preview_config
+      when: grep_script_out | failed
+
+    - name: 'Restart master for changed extension script directive'
+      shell: "systemctl restart atomic-openshift-master"
+      when: grep_script_out | failed
+
     - name: Give administrative user cluster-admin privileges
       command: "oc adm policy add-cluster-role-to-user cluster-admin admin"
 
