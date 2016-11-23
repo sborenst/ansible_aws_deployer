@@ -28,7 +28,8 @@ In order to use these scripts, you will need to set a few things up.
                 "s3:*"
             ],
             "Resource": [
-                "*"
+                "*",
+                "arn:aws:route53:::change/*"
             ]
         }
     ]
