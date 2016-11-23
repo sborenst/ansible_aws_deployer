@@ -21,7 +21,7 @@ objects:
     name: ${PROJECT_NAME}-quota
   spec: 
     hard: 
-      pods: 8
+      pods: 15
       resourcequotas: 1
 - apiVersion: v1
   kind: LimitRange
