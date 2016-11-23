@@ -13,7 +13,8 @@ ansible_ssh_user={{ansible_ssh_user}}
 ###########################################################################
 
 openshift_image_tag=v={{ osrelease }}
-openshift_release={{ osrelease }}
+#openshift_release={{ osrelease }}
+openshift_pkg_version=-{{ osrelease }}
 docker_version="{{docker_version}}"
 deployment_type=openshift-enterprise
 containerized=false
