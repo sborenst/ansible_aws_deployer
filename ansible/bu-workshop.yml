@@ -19,7 +19,7 @@
     - "../Environments/{{config}}_vars.yml"
     - "../Environments/{{config}}_secret_vars.yml"
     include: ./provision_cf.yml
-    tags: [ provisioning, gen_cf_templatem, provisiong_cf_template ]
+    tags: [ provisioning, gen_cf_template, provision_cf_template ]
 
 
 
@@ -414,6 +414,11 @@
       tags:
         - "create-java-s2i-is"
 
+    - name: Create Jenkins pipeline template in openshift namespace
+      shell: " oc create -f https://raw.githubusercontent.com/openshift-roadshow/nationalparks/1.0.0/ose3/pipeline-template.yaml -n openshift || oc replace -f https://raw.githubusercontent.com/openshift-roadshow/nationalparks/1.0.0/ose3/pipeline-template.yaml -n openshift"
+      tags:
+        - "create-pipeline-template"
+
     - name: Check for workshop lab build
       command: "oc get svc/labs -n workshop-infra"
       ignore_errors: true
@@ -422,9 +427,10 @@
     - name: Build workshop lab server
       shell: >
         oc new-app
-        --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#fy17-roadshow-work \
+        --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#1.0.0 \
         -e ROUTER_ADDRESS={{cloudapps_suffix}}
         -e CONSOLE_ADDRESS=master.{{subdomain_base}}
+        -e DEFAULT_LAB=roadshow
         -n workshop-infra;
         oc expose service labs -n workshop-infra
       when: labs_service_out | failed
