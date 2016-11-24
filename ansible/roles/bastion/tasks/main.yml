@@ -10,7 +10,7 @@
 
 - name: Generate host .ssh/config Template
   become: no
-  local_action: template src=../files/bastion_ssh_config.j2 dest=../workdir/ssh-config-{{config}}-{{guid}}
+  local_action: template src=../files/bastion_ssh_config.j2 dest=./workdir/ssh-config-{{config}}-{{guid}}
   tags: [ gen_sshconfig_file ]
 
 - name: copy over host .ssh/config Template

@@ -8,6 +8,7 @@ subdomain_base_short: "{{guid}}"
 subdomain_base: "{{subdomain_base_short}}.openshift.opentlc.com"
 
 rhel_repos:
+  - rhel-7-server-rpms
   - rhel-7-server-extras-rpms
   - rhel-7-server-ose-{{repo_version}}-rpms
 
@@ -22,31 +23,37 @@ nfs_export_path: /srv/nfs
 nfs_shares:
   - user-vols
   - es-storage
-  - logging
 
 
 ## This might get removed
 env_specific_shares:
   - nexus
-  - jenkins
+  - nexus2
+  - nexus3
 
+admin_project: "opentlc-shared"
 
 user_vols: 200
 user_vols_size: 2Gi
 
 HostedZoneId: Z186MFNM7DX4NF
 
+cache_images:
+  - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
+  - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
 ## This might get removed
 env_specific_images:
   - "openshiftdemos/parksmap:0.4"
   - "jorgemoralespou/s2i-java:latest"
-  - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
-  - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
+
 
 ### OpenShift Vars
 repo_version: "3.3"
 docker_version: "1.10.3"
 docker_device: /dev/xvdb
+install_nfs: true
+deploy_openshift: true
+deploy_openshift_post: true
 idm: true
 install_metrics: true
 install_logging: true
@@ -68,7 +75,11 @@ timeout: 60
 ### CLOUDFORMATIONS vars
 
 project_tag: "{{config}}-{{guid}}"
-zone_internal_dns: "internal.{{subdomain_base}}."
+
+
+create_internal_dns_entries: true
+zone_internal_dns: "{{subdomain_base}}.internal."
+chomped_zone_internal_dns: "{{subdomain_base}}.internal"
 zone_public_dns: "{{subdomain_base}}."
 cloudapps_dns: '*.cloudapps.{{subdomain_base}}.'
 

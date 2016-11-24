@@ -1,0 +1,61 @@
+{
+  "Comment": "Create internal dns zone entries",
+  "Changes": [
+{% for host in groups['nodes'] %}
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "node{{loop.index}}.{{zone_internal_dns}}",
+        "Type": "A",
+        "TTL": 20,
+        "ResourceRecords": [ { "Value": "{{hostvars[host]['private_ip']}}" } ]
+      }
+    },
+{% endfor %}
+{% for host in groups['infranodes'] %}
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "infranode{{loop.index}}.{{zone_internal_dns}}",
+        "Type": "A",
+        "TTL": 20,
+        "ResourceRecords": [ { "Value": "{{hostvars[host]['private_ip']}}" } ]
+      }
+    },
+{% endfor %}
+{% for host in groups['masters'] %}
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "master{{loop.index}}.{{zone_internal_dns}}",
+        "Type": "A",
+        "TTL": 20,
+        "ResourceRecords": [ { "Value": "{{hostvars[host]['private_ip']}}" } ]
+      }
+    },
+{% endfor %}
+{% for host in groups['nfs'] %}
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "nfs{{loop.index}}.{{zone_internal_dns}}",
+        "Type": "A",
+        "TTL": 20,
+        "ResourceRecords": [ { "Value": "{{hostvars[host]['private_ip']}}" } ]
+      }
+    },
+{% endfor %}
+{% for host in groups['bastions'] %}
+    {
+      "Action": "CREATE",
+      "ResourceRecordSet": {
+        "Name": "bastion{{loop.index}}.{{zone_internal_dns}}",
+        "Type": "A",
+        "TTL": 20,
+        "ResourceRecords": [ { "Value": "{{hostvars[host]['private_ip']}}" } ]
+      }
+    }
+{% endfor %}
+    
+  ]
+}
