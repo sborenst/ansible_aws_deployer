@@ -108,7 +108,7 @@ dopt_domain_name: "{{ aws_region }}.compute.internal"
 rtb_public_name_tag: "{{subdomain_base}}-public"
 rtb_private_name_tag: "{{subdomain_base}}-private"
 
-nfs_instance_type: "c3.large"
+nfs_instance_type: "c3.2xlarge"
 #nfs_instance_count: 1
 
 bastion_instance_type: "t2.large"
@@ -120,12 +120,12 @@ etcd_instance_type: "{{master_instance_type}}"
 #etcd_instance_count: 0
 
 # infranode_instance_type: "r3.xlarge"
-infranode_instance_type: "c4.4xlarge"
+infranode_instance_type: "m4.4xlarge"
 #infranode_instance_count: 1
 
 # node_instance_type: "r3.xlarge" # r3.2xlarge
-node_instance_type: "c4.4xlarge" # r3.2xlarge
-node_instance_count: 5
+node_instance_type: "m4.4xlarge" # r3.2xlarge
+node_instance_count: 10
 
 key_name: "opentlc-shared-openshift"
 
