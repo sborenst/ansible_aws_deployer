@@ -14,7 +14,7 @@
         state: "absent"
         region: "{{aws_region}}"
         disable_rollback: false
-        template: "./workdir/cf.{{config}}.{{guid}}.json"
+        template: "/tmp/cf.{{config}}.{{guid}}.json"
         tags:
           Stack: "project {{project_tag}}-{{guid}}"
       tags: [ destroying, destroy_cf_deployment ]

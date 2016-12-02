@@ -37,11 +37,11 @@
 ######################### LOCAL Bastion Proxy Config
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=../workdir/ssh-{{config}}-{{guid}}.cfg
+    template: src=files/ssh.cfg.j2 dest=/tmp/ssh-{{config}}-{{guid}}.cfg
     tags: [ bastion_proxy_config, create_ssh_cfg_template ]
 ## Need to add a check here to see if this was already done
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
+    shell: "cat /tmp/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
     tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
 
 ######################### Run COMMON Tasks on all hosts
@@ -56,7 +56,7 @@
   tasks:
     - name: wait for host to be available
       wait_for:
-        host: '{{ inventory_hostname }}' 
+        host: '{{ inventory_hostname }}'
         port: 22
         search_regex: OpenSSH
       with_items: "{{ groups['allhosts'] }}"
@@ -281,7 +281,7 @@
       command: "oc patch scc/anyuid --patch '{\"requiredDropCapabilities\":[\"MKNOD\",\"SYS_CHROOT\"]}'"
 
     - name: Copy nexus.yaml to master
-      copy: 
+      copy:
         src: files/bu-workshop/nexus.yaml
         dest: /root/nexus.yaml
 
@@ -296,7 +296,7 @@
 
     # looks like we need a better check - it seems we're ready up to several
     # seconds before the router finds out about us, so we might want another
-    # http check to make sure nexus is responding 
+    # http check to make sure nexus is responding
     - name: Wait for Nexus to be running
       command: "oc get dc/nexus -o yaml -n workshop-infra"
       register: result
@@ -324,7 +324,7 @@
         dest: /root/addrepo.sh
 
     - name: Check for redhat-ga repository in Nexus
-      uri: 
+      uri:
         url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/redhat-ga"
         status_code: 200
       register: redhat_ga_out
@@ -335,7 +335,7 @@
       when: redhat_ga_out | failed
 
     - name: Check for JBoss repository in Nexus
-      uri: 
+      uri:
         url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/jboss"
         status_code: 200
       register: redhat_ga_out
@@ -346,7 +346,7 @@
       when: redhat_ga_out | failed
 
     - name: Copy gitlab-template.yaml to master
-      copy: 
+      copy:
         src: files/bu-workshop/gitlab-template.yaml
         dest: /root/gitlab-template.yaml
 
@@ -357,8 +357,8 @@
 
     - name: Instantiate Gitlab from template
       shell: >
-        oc process -f /root/gitlab-template.yaml 
-        -v APPLICATION_HOSTNAME=gitlab-ce-workshop-infra.{{cloudapps_suffix}} 
+        oc process -f /root/gitlab-template.yaml
+        -v APPLICATION_HOSTNAME=gitlab-ce-workshop-infra.{{cloudapps_suffix}}
         -v GITLAB_ROOT_PASSWORD=password | oc create -f - -n workshop-infra
       when: install_gitlab | failed
       tags:
@@ -377,7 +377,7 @@
       copy:
         src: files/bu-workshop/java-s2i-is.yaml
         dest: /root/java-s2i-is.yaml
-      tags: 
+      tags:
         - "copy-java-s2i-is"
 
     - name: Create simple-java-s2i IS in openshift namespace
@@ -481,8 +481,8 @@
         dest: /root/userprovision.yaml
 
     - name: Set Gitlab internal hostname
-      set_fact: 
-        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'  
+      set_fact:
+        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'
 
     - name: Get root user token
       uri:
@@ -501,11 +501,11 @@
 
     - name: Execute user provision Ansible script remotely
       shell: >
-        ansible-playbook 
-        -i localhost /root/userprovision.yaml 
-        -e config={{config}} 
-        -e user={{item}} 
-        -e root_token={{root_token}} 
+        ansible-playbook
+        -i localhost /root/userprovision.yaml
+        -e config={{config}}
+        -e user={{item}}
+        -e root_token={{root_token}}
         -e gitlab_hostname={{gitlab_hostname}}
       with_sequence: start=0 end={{ user_vols }} format=%02d
 
@@ -552,9 +552,8 @@
         dest: /home/ec2-user/maven.xml
         mode: 0755
         owner: ec2-user
-        
+
     - name: Build and cache dependencies
       shell: >
         mvn -q -s /home/ec2-user/maven.xml -f /home/ec2-user/repos/{{ item }}/pom.xml install
       with_items: '{{workshop_repos}}'
-

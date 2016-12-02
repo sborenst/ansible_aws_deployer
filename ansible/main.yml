@@ -31,11 +31,11 @@
     tags: [ dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file ]
 
   - name: create internal dns names
-    template: src=./files/internal_dns.json.j2 dest=./workdir/internal_dns-{{config}}-{{guid}}.json
+    template: src=./files/internal_dns.json.j2 dest=/tmp/internal_dns-{{config}}-{{guid}}.json
     tags: [ internal_dns_creation ]
 
   - name: create internal dns names
-    shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file://workdir/internal_dns-{{config}}-{{guid}}.json"
+    shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{config}}-{{guid}}.json"
     ignore_errors: true
     tags: [ internal_dns_creation ]
 
@@ -73,11 +73,11 @@
             ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
             ForwardAgent yes
             StrictHostKeyChecking no
-    with_items: groups['allhosts']
+    with_items: "{{ groups['allhosts'] }}"
     tags: [ bastion_proxy_config, config_ssh_config_file]
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=./workdir/ssh-{{config}}-{{guid}}.cfg
+    template: src=files/ssh.cfg.j2 dest=/tmp/ssh-{{config}}-{{guid}}.cfg
     tags: [ bastion_proxy_config, create_ssh_cfg_template ]
 
 ######################### Run COMMON Tasks on all hosts
@@ -147,7 +147,6 @@
 
 
 ####################### Deploy OpenShift Software
-
 - name: Deploy OpenShift Software
   include: ./deploy_openshift.yml
   when: "deploy_openshift"
