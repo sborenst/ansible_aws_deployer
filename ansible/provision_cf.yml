@@ -1,20 +1,26 @@
 
 ######################### Generate CF Template
 - name: Generate CloudFormation Template
-  template: src=files/cf_templates/cf.{{config}}.template.j2 dest=../workdir/cf.{{config}}.{{guid}}.json
-  tags: [ provisioning, gen_cf_template]
+  template:
+    src: files/cf_templates/cf.{{ config }}.template.j2
+    dest: ../workdir/cf.{{ config }}.{{ guid }}.json
+  tags:
+    - provisioning
+    - gen_cf_template
 
 ######################### Launch CF Template
 - name: Launch CloudFormation template
   cloudformation:
-    stack_name: "{{project_tag}}"
+    stack_name: "{{ project_tag }}"
     state: "present"
-    region: "{{aws_region}}"
+    region: "{{ aws_region }}"
     disable_rollback: false
-    template: "../workdir/cf.{{config}}.{{guid}}.json"
+    template: "../workdir/cf.{{ config }}.{{ guid }}.json"
     tags:
-      Stack: "project {{project_tag}}"
-  tags: [ provisioning, provision_cf_template]
+      Stack: "project {{ project_tag }}"
+  tags:
+    - provisioning
+    - provision_cf_template
   register: cloudformation_out
 
 - name: Store S3 Bucket ID
@@ -22,13 +28,13 @@
     s3_bucket: "{{ cloudformation_out.stack_outputs.RegistryS3Output }}"
 
 - name: get route53 hosts
-  shell: aws route53 list-hosted-zones-by-name --dns-name {{zone_public_dns}} --output text | awk '/zonepub/ {print $3}'
+  shell: aws route53 list-hosted-zones-by-name --dns-name {{ zone_public_dns }} --output text | awk '/zonepub/ {print $3}'
   register: domain_id
   #- debug: var="{{domain_id.stdout}}"
 - name: get route53 hosts
-  shell: aws route53 get-hosted-zone --id "{{domain_id.stdout}}" --output text | awk '/NAMESERVERS/ {print $2}'
+  shell: aws route53 get-hosted-zone --id "{{ domain_id.stdout }}" --output text | awk '/NAMESERVERS/ {print $2}'
   register: name_servers
   #- debug: msg="{{item}}"
   with_items: name_servers.stdout_lines
-- debug: msg="Need to create dns record on ipa\n ipa dnsrecord-add opentlc.com {{subdomain_base_short}} --ns-hostname={{name_servers.stdout_lines[0]}}. --ttl=100"
-  when: "{{idm}}"
+- debug: msg="Need to create dns record on ipa\n ipa dnsrecord-add opentlc.com {{ subdomain_base_short }} --ns-hostname={{ name_servers.stdout_lines[0] }}. --ttl=100"
+  when: "{{ idm }}"

@@ -181,6 +181,7 @@
         dest: "/etc/ansible/ansible.cfg"
         line: "log_path = /root/ansible.log"
         state: present
+
 ##TODO: Just use -include: /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
       shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
@@ -209,7 +210,9 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate PV file
-      template: src=files/{{ config }}_pvs.j2 dest=/root/pvs-{{ config }}-{{ guid }}.yml
+      template:
+        src: files/{{ config }}_pvs.j2
+        dest: /root/pvs-{{ config }}-{{ guid }}.yml
       tags:
         - testing
 
@@ -498,9 +501,11 @@
   become: yes
   vars_files:
     - "../Environments/{{ config }}_vars.yml"
-  tags: [ workshop, workshop_nfs_hack ]
+  tags:
+    - workshop
+    - workshop_nfs_hack
   tasks:
-
+##TODO: Combine all of these under the file module for idempotency
     - name: Fix ownership of git-data
       shell: "chown -R 998:root /srv/nfs/gitlab-data"
 
@@ -515,7 +520,9 @@
   become: yes
   vars_files:
     - "../Environments/{{ config }}_vars.yml"
-  tags: [ workshop, project_request ]
+  tags:
+    - workshop
+    - project_request
   tasks:
 
     - name: Copy project request template to master
@@ -551,7 +558,9 @@
   become: yes
   vars_files:
     - "../Environments/{{ config }}_vars.yml"
-  tags: [ workshop, workshop_users ]
+  tags:
+    - workshop
+    - workshop_users
   tasks:
 
     - name: Add log path to Ansible configuration
