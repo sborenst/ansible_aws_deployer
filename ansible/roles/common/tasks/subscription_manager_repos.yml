@@ -6,7 +6,11 @@
   ignore_errors: true
 
 - name: register node with subscription-manager
-  redhat_subscription: state=present username="{{ rhel_subscription_user }}" password="{{ rhel_subscription_pass }}" autosubscribe=false
+  redhat_subscription:
+    state: present
+    username: "{{ rhel_subscription_user }}"
+    password: "{{ rhel_subscription_pass }}"
+    autosubscribe: false
   register: task_result
   until: task_result | succeeded
   retries: 10
@@ -19,11 +23,34 @@
   retries: 10
   delay: 1
   ignore_errors: no
-  with_items: '{{rhel_pool_id}}'
+  with_items: '{{ rhel_pool_id }}'
 
 - name: disable all repos
   command: subscription-manager repos --disable=*
 
 - name: enable repos for rhel
-  command: subscription-manager repos --enable "{{item}}"
-  with_items: '{{rhel_repos}}'
+  command: subscription-manager repos --enable "{{ item }}"
+  with_items: '{{ rhel_repos }}'
+
+## TODO: Sha, not the biggest fan of the subscription manager
+## module. It's extremely inefficient. Mind test below and letting me know
+## what you think? This way, you can attach to available OS subscriptions
+## automatically.
+
+# - name:  Register machine with RHN
+#   command: /usr/bin/subscription-manager register --username={{ rhel_subscription_user }} --password={{ rhel_subscription_pass }}
+#   register: task_result
+#   until: task_result | succeeded
+#   retries: 10
+#   delay: 5
+#   ignore_errors: yes
+#
+# - name: Get OpenShift pool ID
+#   shell: /usr/bin/subscription-manager list --all --available --matches="*OpenShift*" | awk '/Pool ID/ {print $3}' | head -1
+#   register: pool_id
+#   ignore_errors: yes
+#
+# #Attaching the system to the right Pool
+# - name: registration | Attach machine with Satellite pool ID
+#   command: /usr/bin/subscription-manager attach --pool={{ pool_id.stdout }}
+#   ignore_errors: yes
