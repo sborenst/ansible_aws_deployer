@@ -40,14 +40,14 @@ Herein lies the contribution guidelines for helping out with this project. Do ta
 # This
 - name: Create a directory
   file:
-      state: directory
-      path: /tmp/deletethis
+    state: directory
+    path: /tmp/deletethis
 
 # Not This
 - name: Create a directory
   file:
-    state: directory
-    path: /tmp/deletethis
+      state: directory
+      path: /tmp/deletethis
 ```
 
 * There should be a single line break between tasks
