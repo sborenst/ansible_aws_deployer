@@ -4,14 +4,16 @@
   - name: Configure Host Repositories
     gather_facts: False
     include: ./config_repos.yml
-    tags: [  configure_repos | own_repos ]
+    tags:
+      - "configure_repos | own_repos"
     when: use_opentlc_repos
 
 
   - name: Configure Host Repositories
     gather_facts: False
     include: ./subscription_manager_repos.yml
-    tags: [  configure_repos | subscription_manager_repos ]
+    tags:
+      - "configure_repos | subscription_manager_repos"
     when: use_subscription_manager
 
 
@@ -21,7 +23,8 @@
   - name: Install Basic Packages
     gather_facts: False
     include: ./packages.yml
-    tags: [  install_basic_packages ]
+    tags:
+      - install_basic_packages
 
 
 ######################### Run a complete yum update
