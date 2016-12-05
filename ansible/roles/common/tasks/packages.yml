@@ -12,4 +12,5 @@
     - ansible
     - git
     - vim-enhanced
-  tags: [ install_basic_packages ]
+  tags:
+    - install_basic_packages

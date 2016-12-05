@@ -139,7 +139,7 @@
         "Tags": [
           {
             "Key": "Name",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           },
           {
             "Key": "Application",
@@ -291,7 +291,7 @@
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           }
         ],
         "BlockDeviceMappings": [
@@ -363,7 +363,7 @@
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           }
         ],
         "BlockDeviceMappings": [
@@ -452,7 +452,7 @@
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}",
+            "Value": "{{ project_tag }}",
             "PropagateAtLaunch": true
           }
         ],
@@ -499,7 +499,7 @@
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           }
         ],
         "BlockDeviceMappings": [
@@ -549,7 +549,7 @@
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           }
         ]
       }
@@ -557,15 +557,15 @@
     "RegistryS3": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
-        "BucketName": "{{config}}-{{guid}}",
+        "BucketName": "{{ config }}-{{ guid }}",
         "Tags": [
           {
             "Key": "Name",
-            "Value": "s3-{{config}}-{{guid}}"
+            "Value": "s3-{{ config }}-{{ guid }}"
           },
           {
             "Key": "Project",
-            "Value": "{{project_tag}}"
+            "Value": "{{ project_tag }}"
           }
         ]
       }

@@ -4,19 +4,29 @@
 - name: list current repository files
   shell: "ls -1 /etc/yum.repos.d/"
   register: repodircontents
-  tags: [ configure_repos, remove_existing_repos ]
+  tags:
+    - configure_repos
+    - remove_existing_repos
 
 - name: remove current repository files
-  file: path=/etc/yum.repos.d/{{ item }} state=absent
+  file:
+    path: /etc/yum.repos.d/{{ item }}
+    state: absent
   with_items: repodircontents.stdout_lines
-  tags: [ configure_repos, remove_existing_repos ]
+  tags:
+    - configure_repos
+    - remove_existing_repos
 
 - name: create open.repo template on host
-  template: src=files/repo_templates/repo_{{config}}.j2 dest=/etc/yum.repos.d/open_{{config}}.repo
+  template:
+    src: files/repo_templates/repo_{{ config }}.j2
+    dest: /etc/yum.repos.d/open_{{ config }}.repo
   tags:
    - create_open_repo_template
-  tags: [ configure_repos, create_repos_file ]
+   - configure_repos
+   - create_repos_file
 
+## TODO: This doesn't do anything..
 - name: remove current repositories
   shell: "yum repolist"
   tags: [ configure_repos, run_yum_repolist ]

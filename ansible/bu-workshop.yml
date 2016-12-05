@@ -5,8 +5,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{config}}_vars.yml"
-  - "../Environments/{{config}}_secret_vars.yml"
+  - "../Environments/{{ config }}_vars.yml"
+  - "../Environments/{{ config }}_secret_vars.yml"
 
   tasks:
 
@@ -16,10 +16,13 @@
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
     include: ./provision_cf.yml
-    tags: [ provisioning, gen_cf_template, provision_cf_template ]
+    tags:
+      - provisioning
+      - gen_cf_template
+      - provision_cf_template
 
 
 
@@ -28,35 +31,47 @@
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
-    tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
+    tags:
+      - dynamic_inventory
+      - get_hosts
+      - populate_hosts
+      - generate_ansible_host_file
 
 
 ######################### LOCAL Bastion Proxy Config
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=../workdir/ssh-{{config}}-{{guid}}.cfg
-    tags: [ bastion_proxy_config, create_ssh_cfg_template ]
+    template:
+      src: files/ssh.cfg.j2
+      dest: ../workdir/ssh-{{ config }}-{{ guid }}.cfg
+    tags:
+      - bastion_proxy_config
+      - create_ssh_cfg_template
 ## Need to add a check here to see if this was already done
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat ../workdir/ssh-{{config}}-{{guid}}.cfg >> ~/.ssh/config"
-    tags: [ bastion_proxy_config, workaround, config_ssh_config_file]
+    shell: "cat ../workdir/ssh-{{ config }}-{{ guid }}.cfg >> ~/.ssh/config"
+    tags:
+      - bastion_proxy_config
+      - workaround
+      - config_ssh_config_file
 
 ######################### Run COMMON Tasks on all hosts
 
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
-  tags: [ wait_ssh ]
+  tags:
+    - wait_ssh
   tasks:
     - name: wait for host to be available
       wait_for:
-        host: '{{ inventory_hostname }}' 
+        host: '{{ inventory_hostname }}'
         port: 22
         search_regex: OpenSSH
       with_items: "{{ groups['allhosts'] }}"
@@ -66,11 +81,12 @@
   become: yes
   any_errors_fatal: true
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
   roles:
     - common
-  tags: [ common_tasks ]
+  tags:
+    - common_tasks
 
 
 ######################### Run bastion Tasks
@@ -81,10 +97,11 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - bastion
-  tags: [ bastion_tasks ]
+  tags:
+    - bastion_tasks
 
 
 #########################Configuring nfs Host
@@ -93,34 +110,45 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - nfs
-  tags: [ nfs_tasks ]
+  tags:
+    - nfs_tasks
 
 - name: Configuring nfs Host
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ nfs_tasks ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - nfs_tasks
   tasks:
-    - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
-#    - shell: 'chown -R {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
-    - shell: 'chmod -R 0777 {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+    file:
+      state: directory
+      path: '{{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
+      mode: 0777
+      recurse: yes
 
-####################### Startring OpenShift Specific Deployment
+#### TODO: Remove this section after testing
+#     - shell: 'mkdir -p {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
+# #    - shell: 'chown -R {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
+#     - shell: 'chmod -R 0777 {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
+#### ENDTODO
 
-#########################Configuring openshfit-provisioner
+####################### Starting OpenShift Specific Deployment
+
+#########################Configuring openshift-provisioner
 
 - name: Configuring openshfit-provisioner
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - openshift-provisioner
-  tags: [ openshift_provisioner_tasks ]
+  tags:
+    - openshift_provisioner_tasks
 
 
 #########################Configuring openshfit-nodes
@@ -129,10 +157,11 @@
   hosts: infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - openshift-node
-  tags: [ openshift_node_tasks ]
+  tags:
+    - openshift_node_tasks
 
 
 ######################### Run OpenShift Installer
@@ -142,8 +171,9 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ installing_openshift ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - installing_openshift
   tasks:
 
     - name: Add log path to Ansible configuration
@@ -153,22 +183,27 @@
         line: "log_path = /root/ansible.log"
         state: present
 
+#### TODO: Use include instead of executing shell
     - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
       shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
       register: openshift_install_log
-      tags: [ openshfit_installer ]
+      tags:
+        - openshfit_installer
 
     - name: get openshfit credentials file
       shell: ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
-      tags: [ get_openshift_credentials ]
+      tags:
+        - get_openshift_credentials
+#### ENDTODO
 
 ######################### Create user-vols PVs
 - name: Create user-vols PVs
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ create_user_vol_pvs ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - create_user_vol_pvs
   tasks:
     - set_fact:
         pv_size: '10Gi'
@@ -176,38 +211,53 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate PV file
-      template: src=files/{{config}}_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
-      tags: [ testing ]
-
+      template:
+        src: files/{{ config }}_pvs.j2
+        dest: /root/pvs-{{ config }}-{{ guid }}.yml
+      tags:
+        - testing
+## TODO: When using file module, ansible automagically understand to look
+##       in files/[path]. If using templates, templates/[path]
     - set_fact:
-        pv_size: "{{user_vols_size}}"
+        pv_size: "{{ user_vols_size }}"
         persistentVolumeReclaimPolicy: Recycle
     - name: Generate user vol PV file
-      template: src=files/ocp-ml_userpvs.j2 dest=/root/userpvs-{{config}}-{{guid}}.yml
-      tags: [ testing ]
-    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+      template:
+        src: files/ocp-ml_userpvs.j2
+        dest: /root/userpvs-{{ config }}-{{ guid }}.yml
+      tags:
+        - testing
+##  Should not have to use become as it's defined at the task level
+    - shell: 'oc create -f /root/pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config }}-{{ guid }}.yml'
       become: true
-    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
+    - shell: 'oc create -f /root/userpvs-{{ config }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config }}-{{ guid }}.yml'
       become: true
+## ENDTODO
 
 ######################### Workshop specific
 - name: Workshop admins
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_admins ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - workshop_admins
   tasks:
 
+## TODO: Use htpasswd module
   - name: Add administrative user to htpasswd file
     command: "htpasswd -b /etc/origin/master/htpasswd admin openshift3"
+## ENDTODO
 
 - name: Create Workshop NFS shares
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_nfs ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - workshop_nfs
   tasks:
     - name: Create workshop nfs directory
       file:
@@ -217,28 +267,35 @@
         owner: nfsnobody
         group: nfsnobody
         recurse: True
-      with_items: '{{ workshop_shares }}'
+      with_items:
+        - '{{ workshop_shares }}'
 
     - name: Create workshop exports file
-      file: path=/etc/exports.d/{{config}}-{{guid}}-workshop.exports state=touch mode=755
+      file:
+        path: /etc/exports.d/{{ config }}-{{ guid }}-workshop.exports
+        state: touch
+        mode: 755
 
+## TODO: Would probably be best to use template module here.
     - name: Update workshop exports file
       lineinfile:
-        dest: /etc/exports.d/{{config}}-{{guid}}-workshop.exports
+        dest: /etc/exports.d/{{ config }}-{{ guid }}-workshop.exports
         line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
         state: present
       with_items: '{{ workshop_shares }}'
       run_once: True
-
+## Probably should convert this to a handler
     - name: Reload NFS exports
       shell: "exportfs -r"
-
+## ENDTODO
 - name: Workshop PVs
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, create_workshop_vol_pvs ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - create_workshop_vol_pvs
   tasks:
     - set_fact:
         pv_size: '10Gi'
@@ -246,17 +303,21 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate workshop PV file
-      template: src=files/{{config}}_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
+      template:
+        src: files/{{ config }}_pvs.j2
+        dest: /root/pvs-{{ config }}-{{ guid }}.yml
 
     - name: Create workshop PVs
-      shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+      shell: 'oc create -f /root/pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config }}-{{ guid }}.yml'
 
 - name: Workshop infrastructure
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_infra ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - workshop_infra
   tasks:
 
     - name: 'Copy pipelines extension script to server'
@@ -276,7 +337,12 @@
       when: grep_script_out | failed
 
     - name: 'Restart master for changed extension script directive'
-      shell: "systemctl restart atomic-openshift-master"
+      service:
+        name: atomic-openshift-master
+        state: restarted
+## TODO: Remove this line after validating syntax above
+#      shell: "systemctl restart atomic-openshift-master"
+## ENDTODO
       when: grep_script_out | failed
 
     - name: Give administrative user cluster-admin privileges
@@ -301,7 +367,7 @@
       command: "oc patch scc/anyuid --patch '{\"requiredDropCapabilities\":[\"MKNOD\",\"SYS_CHROOT\"]}'"
 
     - name: Copy nexus.yaml to master
-      copy: 
+      copy:
         src: files/bu-workshop/nexus.yaml
         dest: /root/nexus.yaml
 
@@ -316,7 +382,7 @@
 
     # looks like we need a better check - it seems we're ready up to several
     # seconds before the router finds out about us, so we might want another
-    # http check to make sure nexus is responding 
+    # http check to make sure nexus is responding
     - name: Wait for Nexus to be running
       command: "oc get dc/nexus -o yaml -n workshop-infra"
       register: result
@@ -353,7 +419,7 @@
         dest: /root/addrepo.sh
 
     - name: Check for redhat-ga repository in Nexus
-      uri: 
+      uri:
         url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/redhat-ga"
         status_code: 200
       register: redhat_ga_out
@@ -364,7 +430,7 @@
       when: redhat_ga_out | failed
 
     - name: Check for JBoss repository in Nexus
-      uri: 
+      uri:
         url: "http://nexus.workshop-infra.svc.cluster.local:8081/content/repositories/jboss"
         status_code: 200
       register: redhat_ga_out
@@ -375,7 +441,7 @@
       when: redhat_ga_out | failed
 
     - name: Copy gitlab-template.yaml to master
-      copy: 
+      copy:
         src: files/bu-workshop/gitlab-template.yaml
         dest: /root/gitlab-template.yaml
 
@@ -386,8 +452,8 @@
 
     - name: Instantiate Gitlab from template
       shell: >
-        oc process -f /root/gitlab-template.yaml 
-        -v APPLICATION_HOSTNAME=gitlab-ce-workshop-infra.{{cloudapps_suffix}} 
+        oc process -f /root/gitlab-template.yaml
+        -v APPLICATION_HOSTNAME=gitlab-ce-workshop-infra.{{cloudapps_suffix}}
         -v GITLAB_ROOT_PASSWORD=password | oc create -f - -n workshop-infra
       when: install_gitlab | failed
       tags:
@@ -406,7 +472,7 @@
       copy:
         src: files/bu-workshop/java-s2i-is.yaml
         dest: /root/java-s2i-is.yaml
-      tags: 
+      tags:
         - "copy-java-s2i-is"
 
     - name: Create simple-java-s2i IS in openshift namespace
@@ -429,7 +495,7 @@
         oc new-app
         --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#1.0.0 \
         -e ROUTER_ADDRESS={{cloudapps_suffix}}
-        -e CONSOLE_ADDRESS=master.{{subdomain_base}}
+        -e CONSOLE_ADDRESS=master.{{ subdomain_base }}
         -e DEFAULT_LAB=roadshow
         -n workshop-infra;
         oc expose service labs -n workshop-infra
@@ -441,11 +507,37 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_nfs_hack ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - workshop_nfs_hack
   tasks:
+## TODO: Replace all the shell modules below with the commented text.
+## Also, what permission set should /srv/nfs/gitlab-data have?
+    # - name: Fix ownership of gitlab-data
+    #   file:
+    #     path: /srv/nfs/gitlab-data
+    #     state: directory
+    #     recurse: yes
+    #     owner: 998
+    #     group: root
+    #     recurse: yes
+    #
+    # - name: Fix ownership of git-data
+    #   file:
+    #     path: /srv/nfs/gitlab-data/git-data
+    #     mode: 0700
+    #     state: directory
+    #     recurse: yes
+    #
+    # - name: Fix ownership of git-data/repositories
+    #   file:
+    #     path: /srv/nfs/gitlab-data/git-data/repositories
+    #     mode: 2770
+    #     state: directory
+    #     recurse: yes
 
-    - name: Fix ownership of git-data
+    - name: Fix permission on gitlab-data
       shell: "chown -R 998:root /srv/nfs/gitlab-data"
 
     - name: Fix permission on git-data
@@ -453,13 +545,16 @@
 
     - name: Fix permission on git-data/repositories
       shell: "chmod -R 2770 /srv/nfs/gitlab-data/git-data/repositories"
+## ENDTODO
 
 - name: Project Request Template
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, project_request ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - project_request
   tasks:
 
     - name: Copy project request template to master
@@ -494,8 +589,10 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-  tags: [ workshop, workshop_users ]
+    - "../Environments/{{ config }}_vars.yml"
+  tags:
+    - workshop
+    - workshop_users
   tasks:
 
     - name: Add log path to Ansible configuration
@@ -507,8 +604,8 @@
 
     - name: Copy vars file to master
       copy:
-        src: "../Environments/{{config}}_vars.yml"
-        dest: "/root/{{config}}_vars.yml"
+        src: "../Environments/{{ config }}_vars.yml"
+        dest: "/root/{{ config }}_vars.yml"
 
     - name: Copy user provision Ansible script remotely
       copy:
@@ -516,8 +613,8 @@
         dest: /root/userprovision.yaml
 
     - name: Set Gitlab internal hostname
-      set_fact: 
-        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'  
+      set_fact:
+        gitlab_hostname: 'gitlab-ce.workshop-infra.svc.cluster.local'
 
     - name: Get root user token
       uri:
@@ -532,29 +629,31 @@
 
     - name: Create root token fact
       set_fact:
-        root_token: '{{root_token_out.json.private_token}}'
+        root_token: '{{ root_token_out.json.private_token }}'
 
     - name: Execute user provision Ansible script remotely
       shell: >
-        ansible-playbook 
-        -i localhost /root/userprovision.yaml 
-        -e config={{config}} 
-        -e user={{item}} 
-        -e root_token={{root_token}} 
-        -e gitlab_hostname={{gitlab_hostname}}
+        ansible-playbook
+        -i localhost /root/userprovision.yaml
+        -e config={{ config }}
+        -e user={{ item }}
+        -e root_token={{ root_token }}
+        -e gitlab_hostname={{ gitlab_hostname }}
       with_sequence: start=0 end={{ user_vols }} format=%02d
 
 - name: Cache Java dependencies
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   vars:
     workshop_repos:
       - "nationalparks"
       - "mlbparks"
       - "parksmap-web"
-  tags: [ workshop, workshop_java_dependencies ]
+  tags:
+    - workshop
+    - workshop_java_dependencies
   tasks:
     - name: Install Maven and Java
       yum:
@@ -579,7 +678,8 @@
       git:
         repo: 'https://github.com/openshift-roadshow/{{ item }}'
         dest: "/home/ec2-user/repos/{{ item }}"
-      with_items: '{{workshop_repos}}'
+      with_items:
+        - '{{ workshop_repos }}'
 
     - name: Deploy maven settings file
       template:
@@ -587,9 +687,9 @@
         dest: /home/ec2-user/maven.xml
         mode: 0755
         owner: ec2-user
-        
+
     - name: Build and cache dependencies
       shell: >
         mvn -q -s /home/ec2-user/maven.xml -f /home/ec2-user/repos/{{ item }}/pom.xml install
-      with_items: '{{workshop_repos}}'
-
+      with_items:
+        - '{{ workshop_repos }}'

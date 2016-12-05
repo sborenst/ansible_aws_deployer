@@ -6,7 +6,11 @@
   ignore_errors: true
 
 - name: register node with subscription-manager
-  redhat_subscription: state=present username="{{ rhel_subscription_user }}" password="{{ rhel_subscription_pass }}" autosubscribe=false
+  redhat_subscription:
+    state: present
+    username: "{{ rhel_subscription_user }}"
+    password: "{{ rhel_subscription_pass }}"
+    autosubscribe: false
   register: task_result
   until: task_result | succeeded
   retries: 10
@@ -19,11 +23,13 @@
   retries: 10
   delay: 1
   ignore_errors: no
-  with_items: '{{rhel_pool_id}}'
+  with_items:
+    - '{{rhel_pool_id}}'
 
 - name: disable all repos
   command: subscription-manager repos --disable=*
 
 - name: enable repos for rhel
-  command: subscription-manager repos --enable "{{item}}"
-  with_items: '{{rhel_repos}}'
+  command: subscription-manager repos --enable "{{ item }}"
+  with_items:
+    - '{{rhel_repos}}'
