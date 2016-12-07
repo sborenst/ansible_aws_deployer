@@ -42,17 +42,16 @@
 
 
 ######################### LOCAL Bastion Proxy Config
-
   - name: Generate ssh.cfg Template
     template:
       src: files/ssh.cfg.j2
-      dest: ../workdir/ssh-{{ config }}-{{ guid }}.cfg
+      dest: /tmp/ssh-{{config}}-{{guid}}.cfg
     tags:
       - bastion_proxy_config
       - create_ssh_cfg_template
 ## Need to add a check here to see if this was already done
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat ../workdir/ssh-{{ config }}-{{ guid }}.cfg >> ~/.ssh/config"
+    shell: "cat /tmp/ssh-{{ config }}-{{ guid }}.cfg >> ~/.ssh/config"
     tags:
       - bastion_proxy_config
       - workaround

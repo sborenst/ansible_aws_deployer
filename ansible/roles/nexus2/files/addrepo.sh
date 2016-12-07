@@ -67,7 +67,7 @@ function sedeasy {
 
 # This function will load into http://localhost:8081/nexus the appropriate configuration
 # and extract the zip file into the data_volume_container
-#
+# 
 # Arguments:
 #    repoID
 #    repoURL
@@ -75,7 +75,7 @@ function sedeasy {
 function loadRepo {
    local _id=$1
    local _url=$2
-   local _exit=0
+   local _exit=0 
 
    # Replace the ID token with the name of the zip file (without .zip) and replace in template
    echo "$TEMPLATE" > $TEMPLATE_FILE
@@ -91,7 +91,7 @@ function loadRepo {
 
    # TODO: Instead of failing, check if the repository exist.
    _exit=$?
-   [ $_exit -ne 0 ] && echo "[WARN] Error creating the hosted repository for $_id" && exit $_exit
+   [ $_exit -ne 0 ] && echo "[WARN] Error creating the hosted repository for $_id" && exit $_exit 
    echo ""
    echo "[INFO] Repository created"
 
@@ -99,25 +99,25 @@ function loadRepo {
    # We first query for current config and write it into a /tmp/group.json file
    echo "[INFO] Getting information about public group"
    curl -s -H "Accept: application/json" -H "Content-Type: application/json" -f -X GET -u "${NEXUS_USER}:${NEXUS_PASSWORD}" -o /tmp/group.json "${NEXUS_BASE_URL}/service/local/repo_groups/public"
-   [ $_exit -ne 0 ] && echo "[WARN] Error getting public group repository information" && exit $_exit
+   [ $_exit -ne 0 ] && echo "[WARN] Error getting public group repository information" && exit $_exit 
    echo ""
    echo "[INFO] Public repo information retrieved"
 
 
    # then we add repository id
-   echo "[INFO] Add information about this repository to the public group"
+   echo "[INFO] Add information about this repository to the public group" 
    $HOME/jq '.' /tmp/group.json > /tmp/group-pretty.json
    # We inset the repository in the group just before central and 3rdparty
    sed -i -e "`wc -l /tmp/group-pretty.json | awk '{s=$1-13} END {print s}'` a\{\"id\":\"$_id\"}," /tmp/group-pretty.json
    echo ""
-   echo "[INFO] Information about this repository added to the public group"
+   echo "[INFO] Information about this repository added to the public group" 
 
    [ ! -f /tmp/group-pretty.json ] && echo "[WARN] Something failed while trying to add the repository to the public group. Do it manually" && exit 2
    # and we load the new configuration for public group
 
    echo "[INFO] Updating the public repo"
    curl -H "Accept: application/json" -H "Content-Type: application/json" -f -X PUT  -v -d "@/tmp/group-pretty.json" -u "${NEXUS_USER}:${NEXUS_PASSWORD}" "${NEXUS_BASE_URL}/service/local/repo_groups/public"
-   [ $_exit -ne 0 ] && echo "[WARN] Error adding the hosted repository for $_id to the public group" && exit $_exit
+   [ $_exit -ne 0 ] && echo "[WARN] Error adding the hosted repository for $_id to the public group" && exit $_exit 
    echo ""
    echo "[INFO] Public group updated"
 
@@ -132,4 +132,4 @@ function loadRepo {
 
 
 echo "Loading $repoID hosting $repoURL"
-loadRepo "$repoID" "$repoURL"
+loadRepo "$repoID" "$repoURL" 
