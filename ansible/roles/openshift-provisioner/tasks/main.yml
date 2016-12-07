@@ -14,13 +14,9 @@
 ######################### Enable copy over environemnt details
 
   - name: Copy over ansible hosts file
-<<<<<<< HEAD
     copy:
-      src: ../workdir/hosts-{{ config }}-{{ guid }}
+      src: /tmp/hosts-{{ config }}-{{ guid }}
       dest: /etc/ansible/hosts
-=======
-    copy: src=/tmp/hosts-{{config}}-{{guid}} dest=/etc/ansible/hosts
->>>>>>> aca58df6fd84d5d1cf2e767b3f5f7b7e86548157
 
   - name: get idm certificate
     get_url:
