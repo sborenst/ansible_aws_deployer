@@ -5,15 +5,15 @@ kind: PersistentVolume
 metadata:
   name: {{ pv }}
   labels:
-    owner: {{ pv }} 
+    owner: {{ pv }}
 spec:
   capacity:
-    storage: {{pv_size}}
+    storage: {{ pv_size }}
   accessModes:
   - ReadWriteOnce
   nfs:
-    path: {{nfs_export_path}}/{{pv}}
-    server: {{hostvars[groups['nfs'][0]]['private_hostname']}}
-  persistentVolumeReclaimPolicy: {{persistentVolumeReclaimPolicy}}
+    path: {{ nfs_export_path }}/{{pv}}
+    server: {{ hostvars[groups['nfs'][0]]['private_hostname'] }}
+  persistentVolumeReclaimPolicy: {{ persistentVolumeReclaimPolicy }}
 ---
 {% endfor %}

@@ -147,7 +147,7 @@ easy:
 
     aws s3 rm s3://bucket-name --recursive
 
-Your bucket name is named `{{config}}-{{guid}}`. So, in the case of a
+Your bucket name is named `{{ config }}-{{ guid }}`. So, in the case of a
 `bu-workshop` environment where you provided the `guid` of "Atlanta", your S3
 bucket is called `bu-workshop-atlanta`.
 
