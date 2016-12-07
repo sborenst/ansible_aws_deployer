@@ -5,8 +5,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config }}_vars.yml"
-  - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
   tasks:
 
 
@@ -15,29 +15,35 @@
   - name: Generate CF Template and Launch CF Template
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+      - "../Environments/{{ config }}_vars.yml"
+      - "../Environments/{{ config }}_secret_vars.yml"
     include: ./provision_cf.yml
-    tags: [ provisioning,gen_cf_templatem,provisiong_cf_template ]
+    tags:
+      - provisioning
+      - gen_cf_templatem
+      - provisiong_cf_template
 
 ######################### Populate Dynamic Inventory
 
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+      - "../Environments/{{ config }}_vars.yml"
+      - "../Environments/{{ config }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
-    tags: [ dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file ]
+    tags:
+      - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
 
   - name: create internal dns names
     template: src=./files/internal_dns.json.j2 dest=/tmp/internal_dns-{{ config }}-{{ guid }}.json
-    tags: [ internal_dns_creation ]
+    tags:
+      - internal_dns_creation
 
   - name: create internal dns names
     shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config }}-{{ guid }}.json"
     ignore_errors: true
-    tags: [ internal_dns_creation ]
+    tags:
+      - internal_dns_creation
 
 ######################### LOCAL Bastion Proxy Config
 
@@ -59,26 +65,34 @@
             ForwardAgent yes
             StrictHostKeyChecking no
 
-    tags: [ bastion_proxy_config,config_ssh_config_file ]
+    tags:
+      - bastion_proxy_config
+      - config_ssh_config_file
 
   - name: Add all hosts to local  ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config
-      marker: "##### {mark} ADDED Node Proxy Config  {{item}} {{ config }}-{{ guid }} ######"
+      marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config }}-{{ guid }} ######"
       block: |
-          Host {{item}}
-            Hostname {{item}}
+          Host {{ item }}
+            Hostname {{ item }}
             User ec2-user
-            IdentityFile {{hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file']}}
-            ProxyCommand ssh {{hostvars[groups['bastions'][0]]['public_hostname']}} -W %h:%p
+            IdentityFile {{ hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file'] }}
+            ProxyCommand ssh {{ hostvars[groups['bastions'][0]]['public_hostname'] }} -W %h:%p
             ForwardAgent yes
             StrictHostKeyChecking no
     with_items: "{{ groups['allhosts'] }}"
-    tags: [ bastion_proxy_config, config_ssh_config_file]
+    tags:
+      - bastion_proxy_config
+      - config_ssh_config_file
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=/tmp/ssh-{{ config }}-{{ guid }}.cfg
-    tags: [ bastion_proxy_config, create_ssh_cfg_template ]
+    template:
+      src: files/ssh.cfg.j2
+      dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
+    tags:
+      - bastion_proxy_config
+      - create_ssh_cfg_template
 
 ######################### Run COMMON Tasks on all hosts
 
@@ -95,7 +109,8 @@
         host: '{{ inventory_hostname }}'
         port: 22
         search_regex: OpenSSH
-      with_items: "{{ groups['allhosts'] }}"
+      with_items:
+        - "{{ groups['allhosts'] }}"
 
 
 - name: Configuring common Hosts
@@ -106,7 +121,8 @@
     - "../Environments/{{ config }}_secret_vars.yml"
   roles:
     - common
-  tags: [ common_tasks ]
+  tags:
+    - common_tasks
 
 
 ######################### Run bastion Tasks
@@ -120,7 +136,8 @@
     - "../Environments/{{ config }}_vars.yml"
   roles:
     - bastion
-  tags: [ bastion_tasks ]
+  tags:
+    - bastion_tasks
 
 
 #########################Configuring nfs Host
@@ -130,10 +147,12 @@
   become: yes
   vars_files:
     - "../Environments/{{ config }}_vars.yml"
-  tags: [ nfs_tasks ]
+  tags:
+    - nfs_tasks
   tasks:
-    - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
-    - shell: 'chmod -R 0777 {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
+## TODO: Convert these to file module.
+    - shell: 'mkdir -p {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
+    - shell: 'chmod -R 0777 {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
 
 - name: Configuring nfs Host
   hosts: nfs
@@ -141,8 +160,9 @@
   vars_files:
     - "../Environments/{{ config }}_vars.yml"
   roles:
-    -  { role: nfs, when: "{{install_nfs}}" }
-  tags: [ nfs_tasks ]
+    -  { role: nfs, when: "{{ install_nfs }}" }
+  tags:
+    - nfs_tasks
 
 
 
@@ -150,19 +170,22 @@
 - name: Deploy OpenShift Software
   include: ./deploy_openshift.yml
   when: "deploy_openshift"
-  tags: [ deploy_openshift ]
+  tags:
+    - deploy_openshift
 
 
 ######################### Deploy OpenShift Post Install
 
 - name: Deploy OpenShift Post Install
   include: ./deploy_openshift_post.yml
-  when: "{{deploy_openshift_post}}"
-  tags: [ deploy_openshift ]
+  when: "{{ deploy_openshift_post }}"
+  tags:
+    - deploy_openshift
 
 ######################### env-spcific Post Install
 
 
 - name: env-spcific Post Install
   include: ./{{ config }}_post.yml
-  tags: [ env_specific_post ]
+  tags:
+    - env_specific_post

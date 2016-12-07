@@ -39,7 +39,7 @@ Herein lies the contribution guidelines for helping out with this project. Do ta
 ```yml
 # This
 - name: Create a directory
-  file:
+  file:  
     state: directory
     path: /tmp/deletethis
 
@@ -71,7 +71,7 @@ Herein lies the contribution guidelines for helping out with this project. Do ta
       path: /etc/hosts.equiv
   register: hosts_equiv_audit
   always_run: yes
-  tags:
+  tags: [tag1,tag2]
      - tag1
      - tag2
 
@@ -80,5 +80,3 @@ Herein lies the contribution guidelines for helping out with this project. Do ta
 * Every task must be named and provide brief descriptions about the task being accomplished.
 
 [coc]:http://docs.ansible.com/ansible/community.html#community-code-of-conduct
-
-*[mail]:INSERT MAILING ADDRESS HERE

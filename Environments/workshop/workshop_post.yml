@@ -64,7 +64,7 @@
       shell: 'oc create -f /root/env-pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/env-pvs-{{ config }}-{{ guid }}.yml'
 
     - name: Create env-specific PVs
-      shell: 'oc label pv {{item}} owner={{item}}'
+      shell: 'oc label pv {{ item }} owner={{ item }}'
       with_items: '{{env_specific_shares}}'
 
 - name: env-specific infrastructure
