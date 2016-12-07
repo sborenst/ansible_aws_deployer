@@ -24,7 +24,6 @@
     - dynamic_inventory
     - populate_hosts
 
-
 - name: generate ansible hosts file
   template:
     src: ./files/inventory_templates/hosts.{{ config }}.j2

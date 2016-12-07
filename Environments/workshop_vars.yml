@@ -2,7 +2,7 @@
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
 
-subdomain_base_short: "{{guid}}"
+subdomain_base_short: "{{ guid }}"
 subdomain_base: "{{subdomain_base_short}}.openshift.opentlc.com"
 
 rhel_repos:
@@ -71,7 +71,7 @@ timeout: 60
 
 ### CLOUDFORMATIONS vars
 
-project_tag: "{{config}}-{{guid}}"
+project_tag: "{{ config }}-{{ guid }}"
 
 create_internal_dns_entries: true
 zone_internal_dns: "{{subdomain_base}}.internal."
@@ -134,4 +134,4 @@ key_name: "opentlc-shared-openshift"
 #s3_registry_bucket_name: "docker-registry"
 #s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
-cf_template_description: "{{config}}-{{guid}} template "
+cf_template_description: "{{ config }}-{{ guid }} template "

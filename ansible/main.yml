@@ -5,8 +5,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{config}}_vars.yml"
-  - "../Environments/{{config}}_secret_vars.yml"
+  - "../Environments/{{ config }}_vars.yml"
+  - "../Environments/{{ config }}_secret_vars.yml"
   tasks:
 
 
@@ -15,8 +15,8 @@
   - name: Generate CF Template and Launch CF Template
     gather_facts: False
     vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
     include: ./provision_cf.yml
     tags: [ provisioning,gen_cf_templatem,provisiong_cf_template ]
 
@@ -25,17 +25,17 @@
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags: [ dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file ]
 
   - name: create internal dns names
-    template: src=./files/internal_dns.json.j2 dest=/tmp/internal_dns-{{config}}-{{guid}}.json
+    template: src=./files/internal_dns.json.j2 dest=/tmp/internal_dns-{{ config }}-{{ guid }}.json
     tags: [ internal_dns_creation ]
 
   - name: create internal dns names
-    shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{config}}-{{guid}}.json"
+    shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config }}-{{ guid }}.json"
     ignore_errors: true
     tags: [ internal_dns_creation ]
 
@@ -45,7 +45,7 @@
   - name: Added Bastion Proxy to local ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config
-      marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{config}}-{{guid}} ######"
+      marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config }}-{{ guid }} ######"
       content: |
           Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
             Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
@@ -54,7 +54,7 @@
             IdentitiesOnly yes
             User ec2-user
             ControlMaster auto
-            ControlPath /tmp/{{config}}
+            ControlPath /tmp/{{ config }}
             ControlPersist 5m
             ForwardAgent yes
             StrictHostKeyChecking no
@@ -64,7 +64,7 @@
   - name: Add all hosts to local  ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config
-      marker: "##### {mark} ADDED Node Proxy Config  {{item}} {{config}}-{{guid}} ######"
+      marker: "##### {mark} ADDED Node Proxy Config  {{item}} {{ config }}-{{ guid }} ######"
       block: |
           Host {{item}}
             Hostname {{item}}
@@ -77,7 +77,7 @@
     tags: [ bastion_proxy_config, config_ssh_config_file]
 
   - name: Generate ssh.cfg Template
-    template: src=files/ssh.cfg.j2 dest=/tmp/ssh-{{config}}-{{guid}}.cfg
+    template: src=files/ssh.cfg.j2 dest=/tmp/ssh-{{ config }}-{{ guid }}.cfg
     tags: [ bastion_proxy_config, create_ssh_cfg_template ]
 
 ######################### Run COMMON Tasks on all hosts
@@ -85,7 +85,7 @@
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
   tags: [ common_tasks, wait_ssh ]
@@ -102,8 +102,8 @@
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
   roles:
     - common
   tags: [ common_tasks ]
@@ -117,7 +117,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - bastion
   tags: [ bastion_tasks ]
@@ -129,7 +129,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ nfs_tasks ]
   tasks:
     - shell: 'mkdir -p {{nfs_export_path}}/user-vols/vol{1..{{user_vols}}}'
@@ -139,7 +139,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     -  { role: nfs, when: "{{install_nfs}}" }
   tags: [ nfs_tasks ]
@@ -164,5 +164,5 @@
 
 
 - name: env-spcific Post Install
-  include: ./{{config}}_post.yml
+  include: ./{{ config }}_post.yml
   tags: [ env_specific_post ]

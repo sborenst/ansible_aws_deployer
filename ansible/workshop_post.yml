@@ -4,7 +4,7 @@
 #  hosts: masters
 #  become: yes
 #  vars_files:
-#    - "../Environments/{{config}}_vars.yml"
+#    - "../Environments/{{ config }}_vars.yml"
 #  tags: [ env-specific, env_specific_projects ]
 #  tasks:
 #    - name: Find current projects list
@@ -18,7 +18,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, cf_integration ]
   tasks:
     # This requires password :(
@@ -47,7 +47,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, env-specific_nfs ]
   tasks:
     - name: Create env-specific nfs directory
@@ -61,11 +61,11 @@
       with_items: '{{ env_specific_shares }}'
 
     - name: Create env-specific exports file
-      file: path=/etc/exports.d/{{config}}-{{guid}}-env-specific.exports state=touch mode=755
+      file: path=/etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports state=touch mode=755
 
     - name: Update env-specific exports file
       lineinfile:
-        dest: /etc/exports.d/{{config}}-{{guid}}-env-specific.exports
+        dest: /etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports
         line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
         state: present
       with_items: '{{ env_specific_shares }}'
@@ -78,7 +78,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, env-specific_nfs, create_env-specific_vol_pvs ]
   tasks:
     - set_fact:
@@ -87,10 +87,10 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate env-specific PV file
-      template: src=files/{{config}}_pvs.j2 dest=/root/env-pvs-{{config}}-{{guid}}.yml
+      template: src=files/{{ config }}_pvs.j2 dest=/root/env-pvs-{{ config }}-{{ guid }}.yml
 
     - name: Create env-specific PVs
-      shell: 'oc create -f /root/env-pvs-{{config}}-{{guid}}.yml || oc update -f /root/env-pvs-{{config}}-{{guid}}.yml'
+      shell: 'oc create -f /root/env-pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/env-pvs-{{ config }}-{{ guid }}.yml'
 
     - name: Create env-specific PVs
       shell: 'oc label pv {{item}} owner={{item}}'
@@ -100,8 +100,8 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
-    - "../Environments/{{config}}_secret_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
   tags: [ env-specific, env-specific_infra ]
   tasks:
 
@@ -131,7 +131,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, remove_self_provisioners ]
   tasks:
 
@@ -148,13 +148,13 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, default_project_request_template ]
   tasks:
 
     - name: Copy project request template to master
       copy:
-        src: ../Environments/{{config}}/files/project-template.yml
+        src: ../Environments/{{ config }}/files/project-template.yml
         dest: /root/project-template.yml
 
     - name: Check for project request template
@@ -191,7 +191,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   roles:
     - nexus2
   tags: [  env-specific, install_nexus ]
@@ -201,7 +201,7 @@
   hosts: nodes
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, env_specific_images ]
   tasks:
 
@@ -214,7 +214,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../Environments/{{ config }}_vars.yml"
   tags: [ env-specific, enable_pipelines ]
   tasks:
 

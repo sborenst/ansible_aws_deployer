@@ -45,7 +45,7 @@
   - name: Generate ssh.cfg Template
     template:
       src: files/ssh.cfg.j2
-      dest: /tmp/ssh-{{config}}-{{guid}}.cfg
+      dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
     tags:
       - bastion_proxy_config
       - create_ssh_cfg_template

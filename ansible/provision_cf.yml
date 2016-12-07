@@ -1,20 +1,20 @@
 # ######################## Generate CF Template
 # - name: Generate CloudFormation Template
-#  template: src=files/cf_templates/cf.{{config}}.template.j2 dest=/tmp/cf.{{config}}.{{guid}}.json
+#  template: src=files/cf_templates/cf.{{ config }}.template.j2 dest=/tmp/cf.{{ config }}.{{ guid }}.json
 #  tags: [ provisioning, gen_cf_template]
 #
-# ## This part is temporary until we consolidate file structure into Environments/{{config}}
+# ## This part is temporary until we consolidate file structure into Environments/{{ config }}
 #
 
 ## Backward compatability for bu-workshop
 
 # - name: Generate CloudFormation Template from old location
-#   template: src=files/cf_templates/cf.{{config}}.template.j2 dest=/tmp/cf.{{config}}.{{guid}}.json
+#   template: src=files/cf_templates/cf.{{ config }}.template.j2 dest=/tmp/cf.{{ config }}.{{ guid }}.json
 #   ignore_errors: true
 #
 #   tags: [ provisioning, gen_cf_template]
 
-## New method for Environments/{{config}} file structure
+## New method for Environments/{{ config }} file structure
 
 
 - name: Generate CloudFormation Template from  the new location
