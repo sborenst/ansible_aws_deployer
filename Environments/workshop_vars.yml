@@ -40,6 +40,7 @@ cache_images:
   - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
   - "registry.access.redhat.com/openshift3/jenkins-slave-maven-rhel7:latest"
   - "registry.access.redhat.com/openshift3/jenkins-slave-nodejs-rhel7:latest"
+  - "registry.access.redhat.com/openshift3/jenkins-1-rhel7:latest"
 
 ## This might get removed
 env_specific_images:
@@ -125,7 +126,7 @@ infranode_instance_type: "m4.4xlarge"
 
 # node_instance_type: "r3.xlarge" # r3.2xlarge
 node_instance_type: "m4.4xlarge" # r3.2xlarge
-node_instance_count: 10
+node_instance_count: 8
 
 key_name: "opentlc-shared-openshift"
 
