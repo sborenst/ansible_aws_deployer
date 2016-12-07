@@ -77,9 +77,8 @@ Herein lies the contribution guidelines for helping out with this project. Do ta
 
 ```
 
-* Every task must be named and provide brief descriptions
-* about the task being accomplished
-a
-[coc]:http://docs.ansible.com/ansible/community.html#community-code-of-conduct
+* Every task must be named and provide brief descriptions about the task being accomplished.
+
+* [coc]:http://docs.ansible.com/ansible/community.html#community-code-of-conduct
 
 #[mail]:INSERT MAILING ADDRESS HERE
