@@ -8,87 +8,85 @@
     - "../Environments/{{ config }}_vars.yml"
     - "../Environments/{{ config }}_secret_vars.yml"
   tasks:
-  - name: Generate CF Template and Launch CF Template
-    gather_facts: False
-    vars_files:
-      - "../Environments/{{ config }}_vars.yml"
-      - "../Environments/{{ config }}_secret_vars.yml"
-    include: ./provision_cf.yml
-    tags:
-      - provisioning
-      - gen_cf_templatem
-      - provisiong_cf_template
 
-######################### Populate Dynamic Inventory
+    - name: Generate CF Template and Launch CF Template
+      gather_facts: False
+      vars_files:
+        - "../Environments/{{ config }}_vars.yml"
+        - "../Environments/{{ config }}_secret_vars.yml"
+      include: ./provision_cf.yml
+      tags:
+        - provisioning
+        - gen_cf_templatem
+        - provisiong_cf_template
 
-  - name: Creating Dynamic Inventory
-    gather_facts: False
-    vars_files:
-      - "../Environments/{{ config }}_vars.yml"
-      - "../Environments/{{ config }}_secret_vars.yml"
-    include: ./dynamic_inventory.yml
-    tags:
-      - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
+    - name: Creating Dynamic Inventory
+      gather_facts: False
+      vars_files:
+        - "../Environments/{{ config }}_vars.yml"
+        - "../Environments/{{ config }}_secret_vars.yml"
+      include: ./dynamic_inventory.yml
+      tags:
+        - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
 
-  - name: create internal dns names
-    template: src=./files/internal_dns.json.j2 dest=/tmp/internal_dns-{{ config }}-{{ guid }}.json
-    tags:
-      - internal_dns_creation
+    - name: create internal dns names
+      template:
+        src: ./files/internal_dns.json.j2
+        dest: /tmp/internal_dns-{{ config }}-{{ guid }}.json
+      tags:
+        - internal_dns_creation
 
-  - name: create internal dns names
-    shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config }}-{{ guid }}.json"
-    ignore_errors: true
-    tags:
-      - internal_dns_creation
+    - name: create internal dns names
+      shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config }}-{{ guid }}.json"
+      ignore_errors: true
+      tags:
+        - internal_dns_creation
 
-######################### LOCAL Bastion Proxy Config
+    - name: Added Bastion Proxy to local ~/.ssh/config file
+      blockinfile:
+        dest: ~/.ssh/config
+        marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config }}-{{ guid }} ######"
+        content: |
+            Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
+              Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
+              ForwardAgent yes
+              IdentityFile ~/.ssh/{{key_name}}.pem
+              IdentitiesOnly yes
+              User ec2-user
+              ControlMaster auto
+              ControlPath /tmp/{{ config }}
+              ControlPersist 5m
+              ForwardAgent yes
+              StrictHostKeyChecking no
+      tags:
+        - bastion_proxy_config
+        - config_ssh_config_file
 
+    - name: Add all hosts to local  ~/.ssh/config file
+      blockinfile:
+        dest: ~/.ssh/config
+        marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config }}-{{ guid }} ######"
+        block: |
+            Host {{ item }}
+              Hostname {{ item }}
+              User ec2-user
+              IdentityFile {{ hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file'] }}
+              ProxyCommand ssh {{ hostvars[groups['bastions'][0]]['public_hostname'] }} -W %h:%p
+              ForwardAgent yes
+              StrictHostKeyChecking no
+      with_items:
+        - "{{ groups['allhosts'] }}"
+      tags:
+        - bastion_proxy_config
+        - config_ssh_config_file
 
-  - name: Added Bastion Proxy to local ~/.ssh/config file
-    blockinfile:
-      dest: ~/.ssh/config
-      marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config }}-{{ guid }} ######"
-      content: |
-          Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
-            Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
-            ForwardAgent yes
-            IdentityFile ~/.ssh/{{key_name}}.pem
-            IdentitiesOnly yes
-            User ec2-user
-            ControlMaster auto
-            ControlPath /tmp/{{ config }}
-            ControlPersist 5m
-            ForwardAgent yes
-            StrictHostKeyChecking no
-
-    tags:
-      - bastion_proxy_config
-      - config_ssh_config_file
-
-  - name: Add all hosts to local  ~/.ssh/config file
-    blockinfile:
-      dest: ~/.ssh/config
-      marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config }}-{{ guid }} ######"
-      block: |
-          Host {{ item }}
-            Hostname {{ item }}
-            User ec2-user
-            IdentityFile {{ hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file'] }}
-            ProxyCommand ssh {{ hostvars[groups['bastions'][0]]['public_hostname'] }} -W %h:%p
-            ForwardAgent yes
-            StrictHostKeyChecking no
-    with_items: "{{ groups['allhosts'] }}"
-    tags:
-      - bastion_proxy_config
-      - config_ssh_config_file
-
-  - name: Generate ssh.cfg Template
-    template:
-      src: files/ssh.cfg.j2
-      dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
-    tags:
-      - bastion_proxy_config
-      - create_ssh_cfg_template
+    - name: Generate ssh.cfg Template
+      template:
+        src: files/ssh.cfg.j2
+        dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
+      tags:
+        - bastion_proxy_config
+        - create_ssh_cfg_template
 
 ######################### Run COMMON Tasks on all hosts
 
@@ -111,16 +109,16 @@
         - "{{ groups['allhosts'] }}"
 
 
-- name: Configuring common Hosts
-  hosts: bastions,nfs,masters,infranodes,nodes
-  become: yes
-  vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
-  roles:
-    - common
-  tags:
-    - common_tasks
+    - name: Configuring common Hosts
+      hosts: bastions,nfs,masters,infranodes,nodes
+      become: yes
+      vars_files:
+        - "../Environments/{{ config }}_vars.yml"
+        - "../Environments/{{ config }}_secret_vars.yml"
+      roles:
+        - common
+      tags:
+        - common_tasks
 
 
 ######################### Run bastion Tasks
