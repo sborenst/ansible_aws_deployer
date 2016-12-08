@@ -8,7 +8,6 @@
     - "../Environments/{{ config }}_vars.yml"
     - "../Environments/{{ config }}_secret_vars.yml"
   tasks:
-
     - name: Generate CF Template and Launch CF Template
       gather_facts: False
       vars_files:
@@ -17,7 +16,7 @@
       include: ./provision_cf.yml
       tags:
         - provisioning
-        - gen_cf_templatem
+        - gen_cf_template
         - provisiong_cf_template
 
     - name: Creating Dynamic Inventory
@@ -88,8 +87,6 @@
         - bastion_proxy_config
         - create_ssh_cfg_template
 
-######################### Run COMMON Tasks on all hosts
-
 - name: Wait for readiness
   hosts: bastions
   vars_files:
@@ -109,21 +106,16 @@
         - "{{ groups['allhosts'] }}"
 
 
-    - name: Configuring common Hosts
-      hosts: bastions,nfs,masters,infranodes,nodes
-      become: yes
-      vars_files:
-        - "../Environments/{{ config }}_vars.yml"
-        - "../Environments/{{ config }}_secret_vars.yml"
-      roles:
-        - common
-      tags:
-        - common_tasks
-
-
-######################### Run bastion Tasks
-
-
+- name: Configuring common Hosts
+  hosts: bastions,nfs,masters,infranodes,nodes
+  become: yes
+  vars_files:
+    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config }}_secret_vars.yml"
+  roles:
+    - common
+  tags:
+    - common_tasks
 
 - name: Configuring Bastion Hosts
   hosts: bastions
@@ -160,26 +152,17 @@
   tags:
     - nfs_tasks
 
-
-
-####################### Deploy OpenShift Software
 - name: Deploy OpenShift Software
   include: ./deploy_openshift.yml
   when: "deploy_openshift"
   tags:
     - deploy_openshift
 
-
-######################### Deploy OpenShift Post Install
-
 - name: Deploy OpenShift Post Install
   include: ./deploy_openshift_post.yml
   when: "{{ deploy_openshift_post }}"
   tags:
     - deploy_openshift
-
-######################### env-spcific Post Install
-
 
 - name: env-spcific Post Install
   include: ./{{ config }}_post.yml
