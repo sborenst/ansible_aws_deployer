@@ -102,7 +102,7 @@ aws_secret_access_key = bar
 ### Add the SSH Key to the SSH Agent
 If your operating system has an SSH agent and you are not using your default
 configured SSH key, you will need to add the private key you use with your EC2
-instances to your SSH agent: 
+instances to your SSH agent:
 ```
 ssh-add <path to key file>
 ```
@@ -188,3 +188,17 @@ issues with doing so. Specifically:
 * You may also wish to skip the tag `bastion_proxy_config` when re-running, as
   the tasks associated with this play will re-write the same entries to your SSH
   config file, which could result in hosts becoming unexpectedly unreachable.
+
+### Setting up AWS Client
+
+yum install unzip -y
+curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+unzip awscli-bundle.zip
+sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+ln /usr/local/bin/aws /bin/aws
+aws configure
+
+### Sofware pre-requisite for Ansible Host
+git clone git://github.com/boto/boto.git
+$ cd boto
+$ python setup.py install

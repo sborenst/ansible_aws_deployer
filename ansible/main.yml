@@ -8,10 +8,6 @@
     - "../Environments/{{ config }}_vars.yml"
     - "../Environments/{{ config }}_secret_vars.yml"
   tasks:
-
-
-######################### Generate CF Template and Launch CF Template
-
   - name: Generate CF Template and Launch CF Template
     gather_facts: False
     vars_files:
@@ -102,7 +98,9 @@
     - "../Environments/{{ config }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
-  tags: [ common_tasks, wait_ssh ]
+  tags:
+    - common_tasks
+    - wait_ssh
   tasks:
     - name: wait for host to be available
       wait_for:

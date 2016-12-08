@@ -14,7 +14,7 @@
 - name: Check if {{ item }}'s project exists
   uri:
     url: 'http://{{ gitlab_hostname }}/api/v3/projects/{{ item }}%2Fnationalparks'
-    HEADER_PRIVATE-TOKEN: "{{token_out.json.private_token}}"
+    HEADER_PRIVATE-TOKEN: "{{ token_out.json.private_token }}"
     method: GET
     status_code: 404
     return_content: no

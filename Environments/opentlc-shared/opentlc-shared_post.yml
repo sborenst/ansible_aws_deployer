@@ -5,7 +5,9 @@
   become: yes
   vars_files:
     - "../{{ config }}_vars.yml"
-  tags: [ env-specific, env_specific_projects ]
+  tags:
+    - env-specific
+    - env_specific_projects
   tasks:
     - name: Find current projects list
       command: oc get projects
@@ -19,7 +21,9 @@
   become: yes
   vars_files:
     - "../{{ config }}_vars.yml"
-  tags: [ env-specific, env-specific_nfs ]
+  tags:
+    - env-specific
+    - env-specific_nfs
   tasks:
     - name: Create env-specific nfs directory
       file:
@@ -32,7 +36,10 @@
       with_items: '{{ env_specific_shares }}'
 
     - name: Create env-specific exports file
-      file: path=/etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports state=touch mode=755
+      file:
+        path: /etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports
+        state: touch
+        mode: 0755
 
     - name: Update env-specific exports file
       lineinfile:
@@ -50,7 +57,9 @@
   become: yes
   vars_files:
     - "../{{ config }}_vars.yml"
-  tags: [ env-specific, create_env-specific_vol_pvs ]
+  tags:
+    - env-specific
+    - create_env-specific_vol_pvs
   tasks:
     - set_fact:
         pv_size: '10Gi'
@@ -58,14 +67,16 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate env-specific PV file
-      template: src=files/{{ config }}_pvs.j2 dest=/root/env-pvs-{{ config }}-{{ guid }}.yml
+      template:
+        src: files/{{ config }}_pvs.j2
+        dest: /root/env-pvs-{{ config }}-{{ guid }}.yml
 
     - name: Create env-specific PVs
       shell: 'oc create -f /root/env-pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/env-pvs-{{ config }}-{{ guid }}.yml'
 
     - name: Create env-specific PVs
       shell: 'oc label pv {{ item }} owner={{ item }}'
-      with_items: '{{env_specific_shares}}'
+      with_items: '{{ env_specific_shares }}'
 
 - name: env-specific infrastructure
   hosts: masters
@@ -73,11 +84,13 @@
   vars_files:
     - "../{{ config }}_vars.yml"
     - "../Environments/{{ config }}_secret_vars.yml"
-  tags: [ env-specific, env-specific_infra ]
+  tags:
+    - env-specific
+    - env-specific_infra
   tasks:
 
     - name: Give administrative user cluster-admin privileges
-      command: "oc adm policy add-cluster-role-to-user cluster-admin {{admin_user}}"
+      command: "oc adm policy add-cluster-role-to-user cluster-admin {{ admin_user }}"
 
     - name: Check for opentlc-shared project
       command: "oc get project opentlc-shared"
@@ -105,14 +118,18 @@
     - "../{{ config }}_vars.yml"
   roles:
     - nexus2
-  tags: [  env-specific, install_nexus ]
+  tags:
+    - env-specific
+    - install_nexus
 
 - name: Project Request Template
   hosts: masters
   become: yes
   vars_files:
     - "../{{ config }}_vars.yml"
-  tags: [ env-specific, project_request ]
+  tags:
+    - env-specific
+    - project_request
   tasks:
 
     - name: Copy project request template to master
@@ -149,7 +166,9 @@
   become: yes
   vars_files:
     - "../{{ config }}_vars.yml"
-  tags: [ env-specific, env_specific_images ]
+  tags:
+    - env-specific
+    - env_specific_images
   tasks:
 
     - name: 'Pull image'

@@ -15,19 +15,24 @@
   until: task_result | succeeded
   retries: 10
   delay: 5
-## TODO: need to test, but the below three tasks
-## should be handleable all in the redhat_subscription
-## module above.
+
+- name: get openshift pool id
+  command: subscription-manager list --all --available --matches="*OpenShift*" | awk '/Pool ID/ {print $3}' | head -1
+  register: pool_id
+  ignore_errors: yes
+
 - name: attach node to subscription pool
-  command: subscription-manager attach --pool {{ item }}
+  command: subscription-manager attach --pool {{ pool_id.stdout }}
   register: task_result
   until: task_result.rc == 0
   retries: 10
   delay: 1
   ignore_errors: no
-  with_items:
-    - '{{ rhel_pool_id }}'
 
+## TODO: Will leave for the moment, but should probably use module for this.
+## At a minimum, we should add in a "yum clean all". The module
+## will handle duplicate packages, residual metadata, etc. The expense
+## is that it takes significantly longer.
 - name: disable all repos
   command: subscription-manager repos --disable=*
 
