@@ -17,12 +17,14 @@
   delay: 5
 
 - name: get openshift pool id
-  command: subscription-manager list --all --available --matches="*OpenShift*" | awk '/Pool ID/ {print $3}' | head -1
+  shell: /usr/bin/subscription-manager list --all --available --matches="*OpenShift Container Platform*" | awk '/Pool ID/ {print $3}' | head -1
+  # command: subscription-manager list --all --available --matches="OpenShift Container Platform" | awk '/Pool ID/ {print $3}' | head -1
   register: pool_id
   ignore_errors: yes
+  changed_when: false
 
 - name: attach node to subscription pool
-  command: subscription-manager attach --pool {{ pool_id.stdout }}
+  shell: /usr/bin/subscription-manager attach --pool={{ pool_id.stdout }}
   register: task_result
   until: task_result.rc == 0
   retries: 10

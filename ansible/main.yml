@@ -127,9 +127,6 @@
   tags:
     - bastion_tasks
 
-
-#########################Configuring nfs Host
-
 - name: Creating NFS exports Directory Structure
   hosts: nfs
   become: yes

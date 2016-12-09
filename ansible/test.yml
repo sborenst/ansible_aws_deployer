@@ -14,7 +14,7 @@
     - "../Environments/{{ config }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
-
+## TODO: Template this
   - name: Added Bastion Proxy to local ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config1
@@ -35,7 +35,7 @@
   - debug: msg={{ item }}
     with_items: "{{ groups['all'] }}"
 
-
+## TODO: Template this
   - name: Add all hosts to local  ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config1

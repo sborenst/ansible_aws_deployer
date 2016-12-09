@@ -200,5 +200,5 @@ aws configure
 
 ### Sofware pre-requisite for Ansible Host
 git clone git://github.com/boto/boto.git
-$ cd boto
-$ python setup.py install
+cd boto
+python setup.py install

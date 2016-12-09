@@ -1,11 +1,28 @@
+## TODO: What variables can we strip out of here to build complex variables?
+## i.e. what can we add into group_vars as opposed to config_vars?
+## Example: We don't really need "subdomain_base_short". If we want to use this,
+## should just toss in group_vars/all.
+### Also, we should probably just create a variable reference in the README.md
+### For now, just tagging comments in line with configuration file.
+
+### Route 53 Zone ID (AWS)
+HostedZoneId: Z1TQFSYFZUAO0D
+
+### Key Pair name created for EC2 instances (AWS)
+key_name: "ansible-testing-springer"
+aws_region: us-east-1
+
+## Networking (AWS)
+guid: springer 
+subdomain_base_short: "{{ guid }}"
+subdomain_base: "{{subdomain_base_short}}.openshift.testing.opentlc.com"
 
 ### Common Vars
+
+## TODO: If these aren't unique, we can place these
+## in ansible.cfg.
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
-
-
-subdomain_base_short: "{{ guid }}"
-subdomain_base: "{{subdomain_base_short}}.openshift.opentlc.com"
 
 rhel_repos:
   - rhel-7-server-rpms
@@ -24,7 +41,6 @@ nfs_shares:
   - user-vols
   - es-storage
 
-
 ## This might get removed
 env_specific_shares:
   - nexus
@@ -36,16 +52,14 @@ admin_project: "opentlc-shared"
 user_vols: 200
 user_vols_size: 2Gi
 
-HostedZoneId: Z186MFNM7DX4NF
-
 cache_images:
   - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
   - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
+
 ## This might get removed
 env_specific_images:
   - "openshiftdemos/parksmap:0.4"
   - "jorgemoralespou/s2i-java:latest"
-
 
 ### OpenShift Vars
 repo_version: "3.3"
@@ -57,6 +71,7 @@ deploy_openshift_post: true
 idm: true
 install_metrics: true
 install_logging: true
+
 #### Vars for the Ansible hosts file
 master_api_port: 443
 multi_tenant_setting: "os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'"
@@ -66,11 +81,7 @@ cloudapps_suffix: 'cloudapps.{{subdomain_base}}'
 openshift_master_ldap_ca_file: 'openshift_master_ldap_ca_file=/root/ca.crt'
 osrelease: 3.3.1.3
 openshift_master_overwrite_named_certificates: true
-
-
-
 timeout: 60
-
 
 ### CLOUDFORMATIONS vars
 
@@ -129,8 +140,6 @@ infranode_instance_type: "r3.xlarge"
 
 node_instance_type: "r3.xlarge" # r3.2xlarge
 node_instance_count: 4
-
-key_name: "opentlc-shared-openshift"
 
 #s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'
 #s3_registry_bucket_name: "docker-registry"
