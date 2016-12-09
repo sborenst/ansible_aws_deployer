@@ -13,7 +13,7 @@ key_name: "ansible-testing-springer"
 aws_region: us-east-1
 
 ## Networking (AWS)
-guid: springer
+guid: yolo
 subdomain_base_short: "{{ guid }}"
 subdomain_base: "{{subdomain_base_short}}.openshift.testing.opentlc.com"
 
