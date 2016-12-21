@@ -1,18 +1,42 @@
-# vim: set ft=ansible:
+#vim: set ft=ansible:
 ---
+- name: Include standard configs (default) and custom_configs when present.
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Check for custom_configs
+      find:
+        paths: "../configs/custom_config"
+        recurse: yes
+        file_type: file
+      failed_when: no
+      changed_when: false
+      register: custom_config
+
+    - include_vars:
+        dir: "../configs/standard_config"
+        depth: 1
+        files_matching: '.yml'
+
+    - include_vars:
+        dir: "../configs/custom_config"
+        depth: 1
+        files_matching: '.yml'
+      when: custom_config.matched|int != 0
+
 - name: Starting environment deployment
   hosts: localhost
   connection: local
   gather_facts: False
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_secret_vars.yml"
   tasks:
     - name: Generate CF Template and Launch CF Template
       gather_facts: False
       vars_files:
-        - "../Environments/{{ config }}_vars.yml"
-        - "../Environments/{{ config }}_secret_vars.yml"
+        - "../configs/standard_config/{{ config_name }}_vars.yml"
+        - "../configs/standard_config/{{ config_name }}_secret_vars.yml"
       include: ./provision_cf.yml
       tags:
         - provisioning
@@ -22,8 +46,8 @@
     - name: Creating Dynamic Inventory
       gather_facts: False
       vars_files:
-        - "../Environments/{{ config }}_vars.yml"
-        - "../Environments/{{ config }}_secret_vars.yml"
+        - "../configs/standard_config//{{ config_name }}_vars.yml"
+        - "../configs/standard_config//{{ config_name }}_secret_vars.yml"
       include: ./dynamic_inventory.yml
       tags:
         - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
@@ -31,12 +55,12 @@
     - name: create internal dns names
       template:
         src: ./files/internal_dns.json.j2
-        dest: /tmp/internal_dns-{{ config }}-{{ guid }}.json
+        dest: /tmp/internal_dns-{{ config_name }}-{{ guid }}.json
       tags:
         - internal_dns_creation
 
     - name: create internal dns names
-      shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config }}-{{ guid }}.json"
+      shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config_name }}-{{ guid }}.json"
       ignore_errors: true
       tags:
         - internal_dns_creation
@@ -44,7 +68,7 @@
     - name: Added Bastion Proxy to local ~/.ssh/config file
       blockinfile:
         dest: ~/.ssh/config
-        marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config }}-{{ guid }} ######"
+        marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config_name }}-{{ guid }} ######"
         content: |
             Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
               Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
@@ -53,7 +77,7 @@
               IdentitiesOnly yes
               User ec2-user
               ControlMaster auto
-              ControlPath /tmp/{{ config }}
+              ControlPath /tmp/{{ config_name }}
               ControlPersist 5m
               ForwardAgent yes
               StrictHostKeyChecking no
@@ -64,7 +88,7 @@
     - name: Add all hosts to local  ~/.ssh/config file
       blockinfile:
         dest: ~/.ssh/config
-        marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config }}-{{ guid }} ######"
+        marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config_name }}-{{ guid }} ######"
         block: |
             Host {{ item }}
               Hostname {{ item }}
@@ -82,7 +106,7 @@
     - name: Generate ssh.cfg Template
       template:
         src: files/ssh.cfg.j2
-        dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
+        dest: /tmp/ssh-{{ config_name }}-{{ guid }}.cfg
       tags:
         - bastion_proxy_config
         - create_ssh_cfg_template
@@ -90,7 +114,7 @@
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
   tags:
@@ -110,8 +134,8 @@
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_secret_vars.yml"
   roles:
     - common
   tags:
@@ -121,7 +145,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
   roles:
     - bastion
   tags:
@@ -131,7 +155,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
   tags:
     - nfs_tasks
   tasks:
@@ -143,7 +167,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}_vars.yml"
   roles:
     -  { role: nfs, when: "{{ install_nfs }}" }
   tags:
@@ -162,6 +186,6 @@
     - deploy_openshift
 
 - name: env-spcific Post Install
-  include: ./{{ config }}_post.yml
+  include: ./{{ config_name }}_post.yml
   tags:
     - env_specific_post

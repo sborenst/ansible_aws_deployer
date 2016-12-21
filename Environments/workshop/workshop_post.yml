@@ -4,7 +4,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env_specific_projects
@@ -20,7 +20,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env-specific_nfs
@@ -38,13 +38,13 @@
 
     - name: Create env-specific exports file
       file:
-        path: /etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports
+        path: /etc/exports.d/{{ config_name }}-{{ guid }}-env-specific.exports
         state: touch
         mode: 0755
 
     - name: Update env-specific exports file
       lineinfile:
-        dest: /etc/exports.d/{{ config }}-{{ guid }}-env-specific.exports
+        dest: /etc/exports.d/{{ config_name }}-{{ guid }}-env-specific.exports
         line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
         state: present
       with_items:
@@ -58,7 +58,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - create_env-specific_vol_pvs
@@ -70,11 +70,11 @@
 
     - name: Generate env-specific PV file
       template:
-        src: files/{{ config }}_pvs.j2
-        dest: /root/env-pvs-{{ config }}-{{ guid }}.yml
+        src: files/{{ config_name }}_pvs.j2
+        dest: /root/env-pvs-{{ config_name }}-{{ guid }}.yml
 
     - name: Create env-specific PVs
-      shell: 'oc create -f /root/env-pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/env-pvs-{{ config }}-{{ guid }}.yml'
+      shell: 'oc create -f /root/env-pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/env-pvs-{{ config_name }}-{{ guid }}.yml'
 
     - name: Create env-specific PVs
       shell: 'oc label pv {{ item }} owner={{ item }}'
@@ -85,8 +85,8 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
   tags:
     - env-specific
     - env-specific_infra
@@ -119,7 +119,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
 ## TODO: A path has not been defined here. Roles are pathed relative to the directory
 ## the playbook is executed out of. Basically, it looks for ./roles/[role_name]
   roles:
@@ -132,7 +132,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - project_request
@@ -140,7 +140,7 @@
 
     - name: Copy project request template to master
       copy:
-        src: ../Environments/{{ config }}/project-template.yml
+        src: ../Environments/{{ config_name }}/project-template.yml
         dest: /root/project-template.yml
 
     - name: Check for project request template
@@ -171,7 +171,7 @@
   hosts: nodes
   become: yes
   vars_files:
-    - "../{{ config }}_vars.yml"
+    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env_specific_images

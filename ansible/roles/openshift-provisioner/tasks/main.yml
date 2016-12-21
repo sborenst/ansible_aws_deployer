@@ -15,7 +15,7 @@
 
   - name: Copy over ansible hosts file
     copy:
-      src: /tmp/hosts-{{ config }}-{{ guid }}
+      src: /tmp/hosts-{{ config_name }}-{{ guid }}
       dest: /etc/ansible/hosts
 
   - name: get idm certificate

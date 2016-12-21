@@ -58,7 +58,7 @@ timeout: 60
 
 ### CLOUDFORMATIONS vars
 
-project_tag: "{{ config }}-{{ guid }}"
+project_tag: "{{ config_name }}-{{ guid }}"
 zone_internal_dns: "internal.{{ subdomain_base }}."
 zone_public_dns: "{{ subdomain_base }}."
 cloudapps_dns: '*.cloudapps.{{ subdomain_base }}.'
@@ -105,4 +105,4 @@ key_name: "test-ml"
 #s3_registry_bucket_name: "docker-registry"
 #s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
-cf_template_description: "{{ config }}-{{ guid }} template "
+cf_template_description: "{{ config_name }}-{{ guid }} template "

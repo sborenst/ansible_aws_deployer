@@ -19,8 +19,8 @@
 
 - name: create open.repo template on host
   template:
-    src: files/repo_templates/repo_{{ config }}.j2
-    dest: /etc/yum.repos.d/open_{{ config }}.repo
+    src: files/repo_templates/repo_{{ config_name }}.j2
+    dest: /etc/yum.repos.d/open_{{ config_name }}.repo
   tags:
    - create_open_repo_template
 ##TODO: Is this a left over tag, or does it belong

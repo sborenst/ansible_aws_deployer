@@ -1,10 +1,15 @@
 ######################### env-specific specific
+- name: Include vars and secret vars
+  hosts: localhost
+  connection: local
+  tasks:
+    - include_vars:
+        - "../{{ config_name }}_vars.yml"
+        - "../{{ config_name }}_secret_vars.yml"
 
 - name: env projects
   hosts: masters
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env_specific_projects
@@ -12,15 +17,13 @@
     - name: Find current projects list
       command: oc get projects
       register: projects
-
+      
     # this could go faster if we could figure out a way to pass all items
     # to a script
 
 - name: Create env_specific_shares NFS shares
   hosts: nfs
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env-specific_nfs
@@ -55,8 +58,6 @@
 - name: env-specific PVs
   hosts: masters
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - create_env-specific_vol_pvs
@@ -81,9 +82,6 @@
 - name: env-specific infrastructure
   hosts: masters
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
-    - "../Environments/{{ config_name }}_secret_vars.yml"
   tags:
     - env-specific
     - env-specific_infra
@@ -114,8 +112,6 @@
 - name: Install Nexus
   hosts: masters
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   roles:
     - nexus2
   tags:
@@ -125,8 +121,6 @@
 - name: Project Request Template
   hosts: masters
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - project_request
@@ -164,8 +158,6 @@
 - name: Cache Docker images
   hosts: nodes
   become: yes
-  vars_files:
-    - "../{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env_specific_images

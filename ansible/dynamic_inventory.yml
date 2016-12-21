@@ -1,7 +1,7 @@
 ######################### Populate Dynamic Inventory
 
 - name: Get Hosts from aws
-  shell: ../ansible/scripts/cf-list-hosts.sh all {{ config }}-{{ guid }} {{ aws_region }}
+  shell: ../ansible/scripts/cf-list-hosts.sh all {{ config_name }}-{{ guid }} {{ aws_region }}
   register: group_hostnames
   failed_when: group_hostnames.stderr
   tags:
@@ -26,8 +26,8 @@
 
 - name: generate ansible hosts file
   template:
-    src: ./files/inventory_templates/hosts.{{ config }}.j2
-    dest: /tmp/hosts-{{ config }}-{{ guid }}
+    src: ./files/inventory_templates/hosts.{{ config_name }}.j2
+    dest: /tmp/hosts-{{ config_name }}-{{ guid }}
   tags:
     - dynamic_inventory
     - generate_ansible_host_file

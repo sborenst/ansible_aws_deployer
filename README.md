@@ -129,7 +129,7 @@ template to correspond to your own DNS zone.
 Once you have installed your prerequisites and have configured all settings and
 files, simply run Ansible like so:
 
-    ansible-playbook -i 127.0.0.1 ansible/bu-workshop.yml -e "config=bu-workshop" -e "aws_region=us-west-1" -e "guid=atlanta"
+    ansible-playbook -i 127.0.0.1 ansible/bu-workshop.yml -e "config_name=bu-workshop" -e "aws_region=us-west-1" -e "guid=atlanta"
 
 Be sure to exchange `guid` for a sensible prefix of your choosing.
 
@@ -147,7 +147,7 @@ easy:
 
     aws s3 rm s3://bucket-name --recursive
 
-Your bucket name is named `{{ config }}-{{ guid }}`. So, in the case of a
+Your bucket name is named `{{ config_name }}-{{ guid }}`. So, in the case of a
 `bu-workshop` environment where you provided the `guid` of "Atlanta", your S3
 bucket is called `bu-workshop-atlanta`.
 

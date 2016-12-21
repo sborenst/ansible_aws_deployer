@@ -5,8 +5,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config }}_vars.yml"
-  - "../Environments/{{ config }}_secret_vars.yml"
+  - "../Environments/{{ config_name }}_vars.yml"
+  - "../Environments/{{ config_name }}_secret_vars.yml"
 
   tasks:
 
@@ -16,8 +16,8 @@
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
     include: ./provision_cf.yml
     tags:
       - provisioning
@@ -31,8 +31,8 @@
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags:
       - dynamic_inventory
@@ -46,13 +46,13 @@
   - name: Generate ssh.cfg Template
     template:
       src: files/ssh.cfg.j2
-      dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
+      dest: /tmp/ssh-{{ config_name }}-{{ guid }}.cfg
     tags:
       - bastion_proxy_config
       - create_ssh_cfg_template
 ## Need to add a check here to see if this was already done
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat /tmp/ssh-{{ config }}-{{ guid }}.cfg >> ~/.ssh/config"
+    shell: "cat /tmp/ssh-{{ config_name }}-{{ guid }}.cfg >> ~/.ssh/config"
     tags:
       - bastion_proxy_config
       - workaround
@@ -64,8 +64,8 @@
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
   roles:
     - common
   tags:
@@ -80,7 +80,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - bastion
   tags:
@@ -93,7 +93,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - nfs
   tags:
@@ -103,7 +103,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - nfs_tasks
   tasks:
@@ -120,7 +120,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - openshift-provisioner
   tags:
@@ -133,7 +133,7 @@
   hosts: infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - openshift-node
   tags:
@@ -147,7 +147,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - installing_openshift
   tasks:
@@ -182,7 +182,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - create_user_vol_pvs
   tasks:
@@ -194,7 +194,7 @@
     - name: Generate PV file
       template:
         src: files/ocp-ml_pvs.j2
-        dest: /root/pvs-{{ config }}-{{ guid }}.yml
+        dest: /root/pvs-{{ config_name }}-{{ guid }}.yml
       tags:
         - testing
 
@@ -204,15 +204,15 @@
     - name: Generate user vol PV file
       template:
         src: files/ocp-ml_userpvs.j2
-        dest: /root/userpvs-{{ config }}-{{ guid }}.yml
+        dest: /root/userpvs-{{ config_name }}-{{ guid }}.yml
       tags:
         - testing
 ## TODO: Remove the become statements. This is already covered
 ## at the main level play.
-    - shell: 'oc create -f /root/pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config }}-{{ guid }}.yml'
+    - shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
       become: true
 
-    - shell: 'oc create -f /root/userpvs-{{ config }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config }}-{{ guid }}.yml'
+    - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
       become: true
 
 
@@ -221,7 +221,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - configure_logging
   tasks:
@@ -261,7 +261,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - restart_master_api
   tasks:

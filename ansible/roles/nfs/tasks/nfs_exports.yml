@@ -13,13 +13,13 @@
   run_once: True
 
 - file:
-    path: /etc/exports.d/{{ config }}-{{ guid }}.exports
+    path: /etc/exports.d/{{ config_name }}-{{ guid }}.exports
     state: touch
     mode: 755
 
 - name: create exports file
   lineinfile:
-    dest: /etc/exports.d/{{ config }}-{{ guid }}.exports
+    dest: /etc/exports.d/{{ config_name }}-{{ guid }}.exports
     line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
     state: present
   with_items:

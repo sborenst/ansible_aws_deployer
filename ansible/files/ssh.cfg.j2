@@ -5,7 +5,7 @@ Host {{ hostvars[groups['bastions'][0]]['public_hostname'] }}
   IdentitiesOnly yes
   User ec2-user
   ControlMaster auto
-  ControlPath /tmp/{{ config }}
+  ControlPath /tmp/{{ config_name }}
   ControlPersist 5m
   ForwardAgent yes
   StrictHostKeyChecking no

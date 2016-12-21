@@ -71,7 +71,7 @@ timeout: 60
 
 ### CLOUDFORMATIONS vars
 
-project_tag: "{{ config }}-{{ guid }}"
+project_tag: "{{ config_name }}-{{ guid }}"
 
 create_internal_dns_entries: true
 zone_internal_dns: "{{subdomain_base}}.internal."
@@ -134,4 +134,4 @@ key_name: "opentlc-shared-openshift"
 #s3_registry_bucket_name: "docker-registry"
 #s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
-cf_template_description: "{{ config }}-{{ guid }} template "
+cf_template_description: "{{ config_name }}-{{ guid }} template "

@@ -3,8 +3,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config }}_vars.yml"
-  - "../Environments/{{ config }}_secret_vars.yml"
+  - "../Environments/{{ config_name }}_vars.yml"
+  - "../Environments/{{ config_name }}_secret_vars.yml"
 
   tasks:
 ######################### Launch CF Template
@@ -14,7 +14,7 @@
         state: "absent"
         region: "{{aws_region}}"
         disable_rollback: false
-        template: "/tmp/cf.{{ config }}.{{ guid }}.json"
+        template: "/tmp/cf.{{ config_name }}.{{ guid }}.json"
         tags:
           Stack: "project {{project_tag}}-{{ guid }}"
       tags: [ destroying, destroy_cf_deployment ]

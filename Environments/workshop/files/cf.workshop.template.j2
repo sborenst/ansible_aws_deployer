@@ -600,11 +600,11 @@
     "RegistryS3": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
-        "BucketName": "{{ config }}-{{ guid }}",
+        "BucketName": "{{ config_name }}-{{ guid }}",
         "Tags": [
           {
             "Key": "Name",
-            "Value": "s3-{{ config }}-{{ guid }}"
+            "Value": "s3-{{ config_name }}-{{ guid }}"
           },
           {
             "Key": "Project",

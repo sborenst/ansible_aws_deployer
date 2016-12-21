@@ -5,8 +5,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config }}_vars.yml"
-  - "../Environments/{{ config }}_secret_vars.yml"
+  - "../Environments/{{ config_name }}_vars.yml"
+  - "../Environments/{{ config_name }}_secret_vars.yml"
 
   tasks:
 
@@ -16,8 +16,8 @@
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
     include: ./provision_cf.yml
     tags:
       - provisioning
@@ -31,8 +31,8 @@
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags:
       - dynamic_inventory
@@ -45,13 +45,13 @@
   - name: Generate ssh.cfg Template
     template:
       src: files/ssh.cfg.j2
-      dest: /tmp/ssh-{{ config }}-{{ guid }}.cfg
+      dest: /tmp/ssh-{{ config_name }}-{{ guid }}.cfg
     tags:
       - bastion_proxy_config
       - create_ssh_cfg_template
 ## Need to add a check here to see if this was already done
   - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat /tmp/ssh-{{ config }}-{{ guid }}.cfg >> ~/.ssh/config"
+    shell: "cat /tmp/ssh-{{ config_name }}-{{ guid }}.cfg >> ~/.ssh/config"
     tags:
       - bastion_proxy_config
       - workaround
@@ -62,7 +62,7 @@
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
   tags:
@@ -81,8 +81,8 @@
   become: yes
   any_errors_fatal: true
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
   roles:
     - common
   tags:
@@ -97,7 +97,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - bastion
   tags:
@@ -110,7 +110,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - nfs
   tags:
@@ -120,7 +120,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - nfs_tasks
   tasks:
@@ -137,7 +137,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - openshift-provisioner
   tags:
@@ -150,7 +150,7 @@
   hosts: infranodes,nodes
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   roles:
     - openshift-node
   tags:
@@ -164,7 +164,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - installing_openshift
   tasks:
@@ -194,7 +194,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - create_user_vol_pvs
   tasks:
@@ -205,8 +205,8 @@
 
     - name: Generate PV file
       template:
-        src: files/{{ config }}_pvs.j2
-        dest: /root/pvs-{{ config }}-{{ guid }}.yml
+        src: files/{{ config_name }}_pvs.j2
+        dest: /root/pvs-{{ config_name }}-{{ guid }}.yml
       tags:
         - testing
 
@@ -217,16 +217,16 @@
     - name: Generate user vol PV file
       template:
         src: files/ocp-ml_userpvs.j2
-        dest: /root/userpvs-{{ config }}-{{ guid }}.yml
+        dest: /root/userpvs-{{ config_name }}-{{ guid }}.yml
       tags:
         - testing
 ## TODO: Remove become: true and test. This is already
 ## defined higher up in the task that these two commands
 ## are associated with.
-    - shell: 'oc create -f /root/pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config }}-{{ guid }}.yml'
+    - shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
       become: true
 
-    - shell: 'oc create -f /root/userpvs-{{ config }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config }}-{{ guid }}.yml'
+    - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
       become: true
 
 ######################### Workshop specific
@@ -234,7 +234,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_admins
@@ -247,7 +247,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs
@@ -265,13 +265,13 @@
 
     - name: Create workshop exports file
       file:
-        path: /etc/exports.d/{{ config }}-{{ guid }}-workshop.exports
+        path: /etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports
         state: touch
         mode: 755
 
     - name: Update workshop exports file
       lineinfile:
-        dest: /etc/exports.d/{{ config }}-{{ guid }}-workshop.exports
+        dest: /etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports
         line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
         state: present
       with_items:
@@ -285,7 +285,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - create_workshop_vol_pvs
@@ -297,17 +297,17 @@
 
     - name: Generate workshop PV file
       template:
-        src: files/{{ config }}_pvs.j2
-        dest: /root/pvs-{{ config }}-{{ guid }}.yml
+        src: files/{{ config_name }}_pvs.j2
+        dest: /root/pvs-{{ config_name }}-{{ guid }}.yml
 
     - name: Create workshop PVs
-      shell: 'oc create -f /root/pvs-{{ config }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config }}-{{ guid }}.yml'
+      shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
 
 - name: Workshop infrastructure
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_infra
@@ -498,7 +498,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs_hack
@@ -519,7 +519,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - project_request
@@ -557,7 +557,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_users
@@ -572,8 +572,8 @@
 
     - name: Copy vars file to master
       copy:
-        src: "../Environments/{{ config }}_vars.yml"
-        dest: "/root/{{ config }}_vars.yml"
+        src: "../Environments/{{ config_name }}_vars.yml"
+        dest: "/root/{{ config_name }}_vars.yml"
 
     - name: Copy user provision Ansible script remotely
       copy:
@@ -603,7 +603,7 @@
       shell: >
         ansible-playbook
         -i localhost /root/userprovision.yaml
-        -e config={{ config }}
+        -e config={{ config_name }}
         -e user={{ item }}
         -e root_token={{ root_token }}
         -e gitlab_hostname={{ gitlab_hostname }}
@@ -613,7 +613,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../Environments/{{ config }}_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
   vars:
     workshop_repos:
       - "nationalparks"

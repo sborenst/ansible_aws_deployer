@@ -3,22 +3,22 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config }}_vars.yml"
-  - "../Environments/{{ config }}_secret_vars.yml"
+  - "../Environments/{{ config_name }}_vars.yml"
+  - "../Environments/{{ config_name }}_secret_vars.yml"
   tasks:
 
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config }}_vars.yml"
-    - "../Environments/{{ config }}_secret_vars.yml"
+    - "../Environments/{{ config_name }}_vars.yml"
+    - "../Environments/{{ config_name }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
 ## TODO: Template this
   - name: Added Bastion Proxy to local ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config1
-      marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config }}-{{ guid }} ######"
+      marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config_name }}-{{ guid }} ######"
       content: |
           Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
             Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
@@ -39,7 +39,7 @@
   - name: Add all hosts to local  ~/.ssh/config file
     blockinfile:
       dest: ~/.ssh/config1
-      marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config }}-{{ guid }} ######"
+      marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config_name }}-{{ guid }} ######"
       block: |
           Host {{ item }}
             Hostname {{ item }}
