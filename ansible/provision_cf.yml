@@ -19,7 +19,7 @@
 
 - name: Generate CloudFormation Template from  the new location
   template:
-    src: ../configs/{{ config_name }}/files/cf.{{ config_name }}.template.j2
+    src: ../configs/standard_configs/{{ config_name }}/files/cf.{{ config_name }}.template.j2
     dest: /tmp/cf.{{ config_name }}.{{ guid }}.json
   ignore_errors: true
   tags:

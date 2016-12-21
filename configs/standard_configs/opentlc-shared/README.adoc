@@ -19,7 +19,7 @@ release.
 === "Config" specific method:
 
 * Create a file called anything_secret.yml in the
- Config/standard_config/opentlc-shared:
+ Config/standard_configs/opentlc-shared:
 
 .Example contents of "Secret" Vars file
 ----

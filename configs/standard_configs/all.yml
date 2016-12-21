@@ -4,4 +4,4 @@
 
 config_name: opentlc-shared
 custom_config_path: configs/custom_config
-standard_config_path: configs/standard_config
+standard_configs_path: configs/standard_configs

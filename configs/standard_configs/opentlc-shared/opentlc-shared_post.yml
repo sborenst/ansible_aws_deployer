@@ -128,7 +128,7 @@
 
     - name: Copy project request template to master
       copy:
-        src: ../configs/{{ config_name }}/project-template.yml
+        src: ../configs/standard_configs/{{ config_name }}/project-template.yml
         dest: /root/project-template.yml
 
     - name: Check for project request template

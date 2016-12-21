@@ -14,9 +14,10 @@
       register: custom_config
 
     - include_vars:
-        dir: "../configs/standard_config/{{ config_name }}"
+        dir: "../configs/standard_config/"
         depth: 1
-        files_matching: '.yml'
+        files_matching: '*vars*.yml'
+        ignore_errors: true
 
     - include_vars:
         dir: "../configs/custom_config"
