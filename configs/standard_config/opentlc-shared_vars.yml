@@ -5,22 +5,37 @@
 ### Also, we should probably just create a variable reference in the README.md
 ### For now, just tagging comments in line with configuration file.
 
+###### VARIABLES YOU SHOULD CONFIGURE FOR YOUR DEPLOYEMNT
+###### OR PASS as "-e" args to ansible-playbook command
+
 ### Route 53 Zone ID (AWS)
 HostedZoneId: Z1TQFSYFZUAO0D
 
 ### Key Pair name created for EC2 instances (AWS)
-key_name: "ansible-testing-springer"
+key_name: "default_key_name"
 aws_region: us-east-1
 
 ## Networking (AWS)
-guid: yolo
+guid: defaultguid
 subdomain_base_short: "{{ guid }}"
-subdomain_base: "{{subdomain_base_short}}.openshift.testing.opentlc.com"
+subdomain_base_suffix: ".openshift.opentlc.com"
+subdomain_base: "{{subdomain_base_short}}{{subdomain_base_suffix}}"
 
-### Common Vars
+## Environment Sizing
 
-## TODO: If these aren't unique, we can place these
-## in ansible.cfg.
+bastion_instance_type: "t2.large"
+master_instance_type: "t2.large"
+etcd_instance_type: "{{master_instance_type}}"
+infranode_instance_type: "r3.xlarge"
+node_instance_type: "r3.xlarge" # r3.2xlarge
+nfs_instance_type: "c3.large"
+
+node_instance_count: 2
+
+
+
+###### VARIABLES YOU SHOULD ***NOT*** CONFIGURE FOR YOUR DEPLOYEMNT
+###### You can, but you usually wouldn't need to.
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
 
@@ -126,25 +141,5 @@ dopt_domain_name: "{{ aws_region }}.compute.internal"
 rtb_public_name_tag: "{{subdomain_base}}-public"
 rtb_private_name_tag: "{{subdomain_base}}-private"
 
-nfs_instance_type: "c3.large"
-#nfs_instance_count: 1
-
-bastion_instance_type: "t2.large"
-#bastion_instance_count: 1
-
-master_instance_type: "t2.large"
-etcd_instance_type: "{{master_instance_type}}"
-#master_instance_count: 1
-#etcd_instance_count: 0
-
-infranode_instance_type: "r3.xlarge"
-#infranode_instance_count: 1
-
-node_instance_type: "r3.xlarge" # r3.2xlarge
-node_instance_count: 4
-
-#s3_registry_bucket_user: 'arn:aws:iam::719622469867:user/sborenst'
-#s3_registry_bucket_name: "docker-registry"
-#s3_registry_bucket_domain: ".test1-ml.bucket/*"
 
 cf_template_description: "{{ config_name }}-{{ guid }} template "
