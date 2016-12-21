@@ -4,7 +4,7 @@
 #  hosts: masters
 #  become: yes
 #  vars_files:
-#    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+#    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
 #  tags: [ env-specific, env_specific_projects ]
 #  tasks:
 #    - name: Find current projects list
@@ -18,7 +18,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, cf_integration ]
   tasks:
     # This requires password :(
@@ -47,7 +47,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, env-specific_nfs ]
   tasks:
     - name: Create env-specific nfs directory
@@ -78,7 +78,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, env-specific_nfs, create_env-specific_vol_pvs ]
   tasks:
     - set_fact:
@@ -100,7 +100,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
     - "../configs/{{ config_name }}_secret_vars.yml"
   tags: [ env-specific, env-specific_infra ]
   tasks:
@@ -131,7 +131,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, remove_self_provisioners ]
   tasks:
 
@@ -148,7 +148,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, default_project_request_template ]
   tasks:
 
@@ -191,7 +191,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - nexus2
   tags: [  env-specific, install_nexus ]
@@ -201,7 +201,7 @@
   hosts: nodes
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, env_specific_images ]
   tasks:
 
@@ -214,7 +214,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ env-specific, enable_pipelines ]
   tasks:
 

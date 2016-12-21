@@ -3,7 +3,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ create_user_vol_pvs ]
   tasks:
     - set_fact:
