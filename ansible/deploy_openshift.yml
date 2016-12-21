@@ -5,7 +5,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - openshift-provisioner
   tags: [ openshift_provisioner_tasks ]
@@ -17,7 +17,7 @@
   hosts: infranodes,nodes
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - openshift-node
   tags: [ openshift_node_tasks ]
@@ -30,7 +30,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags: [ installing_openshift ]
   tasks:
 

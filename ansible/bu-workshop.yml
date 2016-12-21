@@ -5,7 +5,7 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../configs/{{ config_name }}_vars.yml"
+  - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   - "../configs/{{ config_name }}_secret_vars.yml"
 
   tasks:
@@ -16,7 +16,7 @@
   - name: Provisioning Environment
     gather_facts: False
     vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
     - "../configs/{{ config_name }}_secret_vars.yml"
     include: ./provision_cf.yml
     tags:
@@ -31,7 +31,7 @@
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
     - "../configs/{{ config_name }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags:
@@ -62,7 +62,7 @@
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
   tags:
@@ -81,7 +81,7 @@
   become: yes
   any_errors_fatal: true
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
     - "../configs/{{ config_name }}_secret_vars.yml"
   roles:
     - common
@@ -97,7 +97,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - bastion
   tags:
@@ -110,7 +110,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - nfs
   tags:
@@ -120,7 +120,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - nfs_tasks
   tasks:
@@ -137,7 +137,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - openshift-provisioner
   tags:
@@ -150,7 +150,7 @@
   hosts: infranodes,nodes
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - openshift-node
   tags:
@@ -164,7 +164,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - installing_openshift
   tasks:
@@ -194,7 +194,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - create_user_vol_pvs
   tasks:
@@ -234,7 +234,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_admins
@@ -247,7 +247,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs
@@ -285,7 +285,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - create_workshop_vol_pvs
@@ -307,7 +307,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_infra
@@ -498,7 +498,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs_hack
@@ -519,7 +519,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - project_request
@@ -557,7 +557,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_users
@@ -572,7 +572,7 @@
 
     - name: Copy vars file to master
       copy:
-        src: "../configs/{{ config_name }}_vars.yml"
+        src: "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
         dest: "/root/{{ config_name }}_vars.yml"
 
     - name: Copy user provision Ansible script remotely
@@ -613,7 +613,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}/{{ config_name }}_vars.yml"
   vars:
     workshop_repos:
       - "nationalparks"
