@@ -14,10 +14,9 @@
       register: custom_config
 
     - include_vars:
-        dir: "../configs/standard_config/"
+        dir: "../configs/standard_configs/{{ config_name }}"
         depth: 1
-        files_matching: '*vars*.yml'
-        ignore_errors: true
+        files_matching: '.yml'
 
     - include_vars:
         dir: "../configs/custom_config"
@@ -30,14 +29,14 @@
   connection: local
   gather_facts: False
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}_secret_vars.yml"
   tasks:
     - name: Generate CF Template and Launch CF Template
       gather_facts: False
       vars_files:
-        - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
-        - "../configs/standard_config/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+        - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+        - "../configs/standard_configs/{{ config_name }}_secret_vars.yml"
       include: ./provision_cf.yml
       tags:
         - provisioning
@@ -47,8 +46,8 @@
     - name: Creating Dynamic Inventory
       gather_facts: False
       vars_files:
-        - "../configs/standard_config//{{ config_name }}_vars.yml"
-        - "../configs/standard_config//{{ config_name }}_secret_vars.yml"
+        - "../configs/standard_configs//{{ config_name }}_vars.yml"
+        - "../configs/standard_configs//{{ config_name }}_secret_vars.yml"
       include: ./dynamic_inventory.yml
       tags:
         - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
@@ -115,7 +114,7 @@
 - name: Wait for readiness
   hosts: bastions
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   gather_facts: False
   any_errors_fatal: true
   tags:
@@ -135,8 +134,8 @@
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}_secret_vars.yml"
   roles:
     - common
   tags:
@@ -146,7 +145,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     - bastion
   tags:
@@ -156,7 +155,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - nfs_tasks
   tasks:
@@ -168,7 +167,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/standard_config/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
     -  { role: nfs, when: "{{ install_nfs }}" }
   tags:
