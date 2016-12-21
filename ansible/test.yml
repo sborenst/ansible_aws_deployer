@@ -3,15 +3,15 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config_name }}_vars.yml"
-  - "../Environments/{{ config_name }}_secret_vars.yml"
+  - "../configs/{{ config_name }}_vars.yml"
+  - "../configs/{{ config_name }}_secret_vars.yml"
   tasks:
 
   - name: Creating Dynamic Inventory
     gather_facts: False
     vars_files:
-    - "../Environments/{{ config_name }}_vars.yml"
-    - "../Environments/{{ config_name }}_secret_vars.yml"
+    - "../configs/{{ config_name }}_vars.yml"
+    - "../configs/{{ config_name }}_secret_vars.yml"
     include: ./dynamic_inventory.yml
     tags: [ dynamic_inventory, get_hosts, populate_hosts, generate_ansible_host_file ]
 ## TODO: Template this

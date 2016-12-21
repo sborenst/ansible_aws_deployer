@@ -3,8 +3,8 @@
   connection: local
   gather_facts: False
   vars_files:
-  - "../Environments/{{ config_name }}_vars.yml"
-  - "../Environments/{{ config_name }}_secret_vars.yml"
+  - "../configs/{{ config_name }}_vars.yml"
+  - "../configs/{{ config_name }}_secret_vars.yml"
 
   tasks:
 ######################### Launch CF Template

@@ -83,7 +83,7 @@
   become: yes
   vars_files:
     - "../{{ config_name }}_vars.yml"
-    - "../Environments/{{ config_name }}_secret_vars.yml"
+    - "../configs/{{ config_name }}_secret_vars.yml"
   tags:
     - env-specific
     - env-specific_infra
@@ -134,7 +134,7 @@
 
     - name: Copy project request template to master
       copy:
-        src: ../Environments/{{ config_name }}/project-template.yml
+        src: ../configs/{{ config_name }}/project-template.yml
         dest: /root/project-template.yml
 
     - name: Check for project request template
