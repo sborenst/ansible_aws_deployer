@@ -4,7 +4,7 @@
   gather_facts: False
   vars_files:
   - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  - "../configs/standard_configs/{{ config_name }}_secret_vars.yml"
+  - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
 
   tasks:
 ######################### Launch CF Template
