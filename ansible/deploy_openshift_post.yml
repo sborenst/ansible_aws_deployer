@@ -3,7 +3,7 @@
   hosts: bastions
   become: yes
   vars_files:
-    - "../Environments/{{config}}_vars.yml"
+    - "../configs/{{ config_name }}_vars.yml"
   tags: [ create_user_vol_pvs ]
   tasks:
     - set_fact:
@@ -12,16 +12,19 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate PV file
-      template: src=files/{{config}}_pvs.j2 dest=/root/pvs-{{config}}-{{guid}}.yml
+      template: src=files/{{ config_name }}_pvs.j2 dest=/root/pvs-{{ config_name }}-{{ guid }}.yml
       tags: [ gen_pv_file ]
 
     - set_fact:
         pv_size: "{{user_vols_size}}"
         persistentVolumeReclaimPolicy: Recycle
     - name: Generate user vol PV file
-      template: src=files/ocp-ml_userpvs.j2 dest=/root/userpvs-{{config}}-{{guid}}.yml
-      tags: [ gen_user_vol_pv ]
-    - shell: 'oc create -f /root/pvs-{{config}}-{{guid}}.yml || oc update -f /root/pvs-{{config}}-{{guid}}.yml'
+      template:
+        src: files/ocp-ml_userpvs.j2
+        dest: /root/userpvs-{{ config_name }}-{{ guid }}.yml
+      tags:
+        - gen_user_vol_pv
+    - shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
       become: true
-    - shell: 'oc create -f /root/userpvs-{{config}}-{{guid}}.yml || oc update -f /root/userpvs-{{config}}-{{guid}}.yml'
+    - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
       become: true

@@ -6,13 +6,13 @@ metadata:
   name: vol{{ pv }}
 spec:
   capacity:
-    storage: {{pv_size}}
+    storage: {{ pv_size }}
   accessModes:
   - ReadWriteOnce
   - ReadWriteMany
   nfs:
-    path: {{nfs_export_path}}/user-vols/vol{{pv}}
-    server: {{hostvars[groups['nfs'][0]]['private_hostname']}}
-  persistentVolumeReclaimPolicy: {{persistentVolumeReclaimPolicy}}
+    path: {{ nfs_export_path }}/user-vols/vol{{pv}}
+    server: {{ hostvars[groups['nfs'][0]]['private_hostname'] }}
+  persistentVolumeReclaimPolicy: {{ persistentVolumeReclaimPolicy }}
 ---
 {% endfor %}

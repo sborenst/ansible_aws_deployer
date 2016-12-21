@@ -1,39 +1,44 @@
-
 # ######################## Generate CF Template
 # - name: Generate CloudFormation Template
-#  template: src=files/cf_templates/cf.{{config}}.template.j2 dest=/tmp/cf.{{config}}.{{guid}}.json
+#  template: src=files/cf_templates/cf.{{ config_name }}.template.j2 dest=/tmp/cf.{{ config_name }}.{{ guid }}.json
 #  tags: [ provisioning, gen_cf_template]
 #
-# ## This part is temporary until we consolidate file structure into Environments/{{config}}
+# ## This part is temporary until we consolidate file structure into Environments/{{ config_name }}
 #
 
 ## Backward compatability for bu-workshop
 
 # - name: Generate CloudFormation Template from old location
-#   template: src=files/cf_templates/cf.{{config}}.template.j2 dest=/tmp/cf.{{config}}.{{guid}}.json
+#   template: src=files/cf_templates/cf.{{ config_name }}.template.j2 dest=/tmp/cf.{{ config_name }}.{{ guid }}.json
 #   ignore_errors: true
 #
 #   tags: [ provisioning, gen_cf_template]
 
-## New method for Environments/{{config}} file structure
+## New method for Environments/{{ config_name }} file structure
 
 
 - name: Generate CloudFormation Template from  the new location
-  template: src=../Environments/{{config}}/files/cf.{{config}}.template.j2 dest=/tmp/cf.{{config}}.{{guid}}.json
+  template:
+    src: ../configs/{{ config_name }}/files/cf.{{ config_name }}.template.j2
+    dest: /tmp/cf.{{ config_name }}.{{ guid }}.json
   ignore_errors: true
-  tags: [ provisioning, gen_cf_template]
+  tags:
+    - provisioning
+    - gen_cf_template
 
 ######################### Launch CF Template
 - name: Launch CloudFormation template
   cloudformation:
-    stack_name: "{{project_tag}}"
+    stack_name: "{{ project_tag }}"
     state: "present"
-    region: "{{aws_region}}"
+    region: "{{ aws_region }}"
     disable_rollback: false
-    template: "/tmp/cf.{{config}}.{{guid}}.json"
+    template: "/tmp/cf.{{ config_name }}.{{ guid }}.json"
     tags:
-      Stack: "project {{project_tag}}"
-  tags: [ provisioning, provision_cf_template]
+      Stack: "project {{ project_tag }}"
+  tags:
+    - provisioning
+    - provision_cf_template
   register: cloudformation_out
 
 - name: Store S3 Bucket ID
@@ -42,6 +47,7 @@
 
 - debug:
     msg: "bucket is {{ s3_bucket }}"
+
 - name: Store internal route53 ID
   set_fact:
     internal_zone_id: "{{ cloudformation_out.stack_outputs.Route53internalzoneOutput }}"
@@ -56,7 +62,7 @@
 #- name: get route53 hosts
 #  shell: aws route53 get-hosted-zone --id "{{domain_id.stdout}}" --output text | awk '/NAMESERVERS/ {print $2}'
 #  register: name_servers
-  #- debug: msg="{{item}}"
+  #- debug: msg="{{ item }}"
 #  with_items: name_servers.stdout_lines
 #- debug: msg="Need to create dns record on ipa\n ipa dnsrecord-add opentlc.com {{subdomain_base_short}} --ns-hostname={{name_servers.stdout_lines[0]}}. --ttl=100"
 #  when: "{{idm}}"
