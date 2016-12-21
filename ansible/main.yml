@@ -16,7 +16,7 @@
     - include_vars:
         dir: "../configs/standard_configs/{{ config_name }}"
         depth: 1
-        files_matching: '.yml'
+        files_matching: '.*vars.*yml'
 
     - include_vars:
         dir: "../configs/custom_config"
