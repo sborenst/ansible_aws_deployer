@@ -186,6 +186,6 @@
     - deploy_openshift
 
 - name: env-spcific Post Install
-  include: ./{{ config_name }}_post.yml
+  include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_post.yml"
   tags:
     - env_specific_post

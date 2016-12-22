@@ -7,6 +7,7 @@
         - "../{{ config_name }}_vars.yml"
         - "../{{ config_name }}_secret_vars.yml"
 
+
 - name: env projects
   hosts: masters
   become: yes
@@ -18,12 +19,40 @@
       command: oc get projects
       register: projects
 
-    # this could go faster if we could figure out a way to pass all items
-    # to a script
+
+- name: Configure Bastion for CF integration
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  tags: [ env-specific, cf_integration ]
+  tasks:
+    # This requires password :(
+    #- shell: "git clone http://github.com/redhat-gpe/OPEN_Admin /opt/OPEN_Admin/"
+    - name: Configure OPENTLC CloudForms integration
+      shell: "useradd opentlc-mgr"
+      ignore_errors: true
+  #  - shell: "chown -R opentlc-mgr.opentlc-mgr /opt/OPEN_Admin/"
+    - file: "path=/opt/OPEN_Admin/ state=directory owner=opentlc-mgr recurse=yes group=opentlc-mgr  mode=0770"
+    - shell: "cp -rf /root/.kube /home/opentlc-mgr/"
+      ignore_errors: true
+    - shell: "chown -R opentlc-mgr.opentlc-mgr /home/opentlc-mgr/.kube"
+      ignore_errors: true
+    - shell: |
+          mkdir /home/opentlc-mgr/bin;
+          ln -s /opt/OPEN_Admin/OPENTLC-OCP3/provision-ose-projects.sh /home/opentlc-mgr/bin/provision-accounts.sh
+          ln -s /opt/OPEN_Admin/OPENTLC-OCP3/provision-ose-projects.sh /home/opentlc-mgr/bin/provision-ose-projects.sh
+          mkdir /home/opentlc-mgr/.ssh
+          echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC4OojwKH74UWVOY92y87Tb/b56CMJoWbz2gyEYsr3geOc2z/n1pXMwPfiC2KT7rALZFHofc+x6vfUi6px5uTm06jXa78S7UB3MX56U3RUd8XF3svkpDzql1gLRbPIgL1h0C7sWHfr0K2LG479i0nPt/X+tjfsAmT3nWj5PVMqSLFfKrOs6B7dzsqAcQPInYIM+Pqm/pXk+Tjc7cfExur2oMdzx1DnF9mJaj1XTnMsR81h5ciR2ogXUuns0r6+HmsHzdr1I1sDUtd/sEVu3STXUPR8oDbXBsb41O5ek6E9iacBJ327G3/1SWwuLoJsjZM0ize+iq3HpT1NqtOW6YBLR opentlc-mgr@inf00-mwl.opentlc.com' >> /home/opentlc-mgr/.ssh/authorized_keys
+          chown -R opentlc-mgr.opentlc-mgr /home/opentlc-mgr/.ssh
+          chmod 400 /home/opentlc-mgr/.ssh/authorized_keys
+          chmod 700 /home/opentlc-mgr/.ssh
 
 - name: Create env_specific_shares NFS shares
   hosts: nfs
   become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env-specific_nfs
@@ -58,6 +87,8 @@
 - name: env-specific PVs
   hosts: masters
   become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - create_env-specific_vol_pvs
@@ -108,15 +139,7 @@
       command: "oc patch scc/anyuid --patch '{\"requiredDropCapabilities\":[\"MKNOD\",\"SYS_CHROOT\"]}'"
 
 
-### Install Nexus
-- name: Install Nexus
-  hosts: masters
-  become: yes
-  roles:
-    - nexus2
-  tags:
-    - env-specific
-    - install_nexus
+
 
 - name: Project Request Template
   hosts: masters
@@ -149,11 +172,50 @@
         state: present
       register: master_config
 
+    - name: Add Project request message
+      replace:
+        dest: '/etc/origin/master/master-config.yaml'
+        regexp: 'projectRequestMessage.*'
+        replace: "projectRequestMessage: 'To provision Projects you must request access in https://labs.opentlc.com or https://rhpds.redhat.com'"
+        backup: yes
+
+
     - name: Restart master service
       service:
         name: atomic-openshift-master
         state: restarted
       when: master_config.changed
+
+
+
+- name: Configure pipelines
+  hosts: masters
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  tags: [ env-specific, enable_pipelines ]
+  tasks:
+
+## This adds one every time, should make sure it doesn't
+    - name: Add extensionScripts line to master-config.yaml
+      lineinfile:
+        insertafter: "assetConfig:"
+        dest: /etc/origin/master/master-config.yaml
+        line: "  extensionScripts:\n\ \ \ \ - /etc/origin/master/tech-preview.js"
+        state: present
+
+    - name: Acreate tech-preview.js file with pipelines enabled
+      lineinfile:
+        insertafter: "assetConfig:"
+        dest: /etc/origin/master/tech-preview.js
+        line: "window.OPENSHIFT_CONSTANTS.ENABLE_TECH_PREVIEW_FEATURE['pipelines'] = true"
+        create: yes
+        state: present
+    - name: Restart master service
+      service:
+        name: atomic-openshift-master
+        state: restarted
+
 
 - name: Cache Docker images
   hosts: nodes
@@ -166,3 +228,15 @@
     - name: 'Pull image'
       command: "docker pull {{ item }}"
       with_items: '{{ env_specific_images }}'
+
+
+
+### Install Nexus
+- name: Install Nexus
+  hosts: masters
+  become: yes
+  roles:
+    - nexus2
+  tags:
+    - env-specific
+    - install_nexus
