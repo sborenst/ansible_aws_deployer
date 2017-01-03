@@ -12,12 +12,15 @@
         persistentVolumeReclaimPolicy: Retain
 
     - name: Generate PV file
-      template: src=files/{{ config_name }}_pvs.j2 dest=/root/pvs-{{ config_name }}-{{ guid }}.yml
+      template:
+        src: "../configs/standard_configs/{{ config_name }}/files/{{ config_name }}_pvs.j2"
+        dest: "/root/pvs-{{ config_name }}-{{ guid }}.yml"
       tags: [ gen_pv_file ]
 
     - set_fact:
         pv_size: "{{user_vols_size}}"
         persistentVolumeReclaimPolicy: Recycle
+
     - name: Generate user vol PV file
       template:
         src: files/ocp-ml_userpvs.j2
@@ -28,3 +31,4 @@
       become: true
     - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
       become: true
+      register: result

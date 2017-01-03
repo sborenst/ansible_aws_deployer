@@ -3,28 +3,28 @@
   hosts: localhost
   connection: local
   tasks:
-    - include_vars:
-        - "../{{ config_name }}_vars.yml"
-        - "../{{ config_name }}_secret_vars.yml"
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_secret_vars.yml"
 
 
-- name: env projects
-  hosts: masters
-  become: yes
-  tags:
-    - env-specific
-    - env_specific_projects
-  tasks:
-    - name: Find current projects list
-      command: oc get projects
-      register: projects
-
+# - name: env projects
+#   hosts: masters
+#   become: yes
+#   tags:
+#     - env-specific
+#     - env_specific_projects
+#   tasks:
+#     - name: Find current projects list
+#       command: oc get projects
+#       register: projects
+#
 
 - name: Configure Bastion for CF integration
   hosts: bastions
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_vars.yml"
   tags: [ env-specific, cf_integration ]
   tasks:
     # This requires password :(
@@ -52,7 +52,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env-specific_nfs
@@ -88,7 +88,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - create_env-specific_vol_pvs
@@ -113,6 +113,8 @@
 - name: env-specific infrastructure
   hosts: masters
   become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env-specific_infra
@@ -144,6 +146,8 @@
 - name: Project Request Template
   hosts: masters
   become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - project_request
@@ -151,7 +155,7 @@
 
     - name: Copy project request template to master
       copy:
-        src: ../configs/standard_configs/{{ config_name }}/project-template.yml
+        src: ./project-template.yml
         dest: /root/project-template.yml
 
     - name: Check for project request template
@@ -192,7 +196,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_vars.yml"
   tags: [ env-specific, enable_pipelines ]
   tasks:
 
@@ -204,7 +208,7 @@
         line: "  extensionScripts:\n\ \ \ \ - /etc/origin/master/tech-preview.js"
         state: present
 
-    - name: Acreate tech-preview.js file with pipelines enabled
+    - name: create tech-preview.js file with pipelines enabled
       lineinfile:
         insertafter: "assetConfig:"
         dest: /etc/origin/master/tech-preview.js
@@ -220,6 +224,8 @@
 - name: Cache Docker images
   hosts: nodes
   become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
   tags:
     - env-specific
     - env_specific_images
@@ -230,13 +236,13 @@
       with_items: '{{ env_specific_images }}'
 
 
-
-### Install Nexus
-- name: Install Nexus
-  hosts: masters
-  become: yes
-  roles:
-    - nexus2
-  tags:
-    - env-specific
-    - install_nexus
+#
+# ### Install Nexus
+# - name: Install Nexus
+#   hosts: masters
+#   become: yes
+#   roles:
+#     - nexus2
+#   tags:
+#     - env-specific
+#     - install_nexus

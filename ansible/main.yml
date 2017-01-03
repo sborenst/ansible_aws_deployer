@@ -175,7 +175,7 @@
 
 - name: Deploy OpenShift Software
   include: ./deploy_openshift.yml
-  when: "deploy_openshift"
+  when: "{{deploy_openshift}}"
   tags:
     - deploy_openshift
 
@@ -183,9 +183,10 @@
   include: ./deploy_openshift_post.yml
   when: "{{ deploy_openshift_post }}"
   tags:
-    - deploy_openshift
+    - deploy_openshift_post
 
 - name: env-spcific Post Install
   include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_post.yml"
+  when: "{{deploy_env_post}}"
   tags:
     - env_specific_post
