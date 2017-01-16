@@ -3,6 +3,7 @@
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
 
+lab_tag: "1.0.0"
 
 subdomain_base_short: "{{guid}}"
 subdomain_base: "{{subdomain_base_short}}.openshift3roadshow.com"

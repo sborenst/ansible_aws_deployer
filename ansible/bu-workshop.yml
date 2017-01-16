@@ -427,7 +427,7 @@
     - name: Build workshop lab server
       shell: >
         oc new-app
-        --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#1.0.0 \
+        --name=labs https://github.com/openshift-evangelists/openshift-workshops.git#{{ lab_tag }} \
         -e ROUTER_ADDRESS={{cloudapps_suffix}}
         -e CONSOLE_ADDRESS=master.{{subdomain_base}}
         -e DEFAULT_LAB=roadshow
