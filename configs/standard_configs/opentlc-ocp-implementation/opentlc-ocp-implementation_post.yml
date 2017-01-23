@@ -8,12 +8,19 @@
     - "./{{ config_name }}_secret_vars.yml"
 
 - name: Change Environment Hostnames
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+    - hostname:
+      name: "bastion.{{guid}}.openshift.opentlc.com"
+
+- name: Change Environment Hostnames
   hosts: localhost
   become: yes
   vars_files:
     - "./{{ config_name }}_vars.yml"
-  tags: [ env-specific, change_internal_hostnames ] 
+  tags: [ env-specific, change_internal_hostnames ]
   tasks:
-  - name: Change hostnames 
+  - name: Change hostnames
     shell: "ansible all  -i /tmp/hosts-{{ config_name }}-{{guid}} -m shell -a 'sudo hostnamectl set-hostname {{ '{{'  }} openshift_hostname {{ '}}' }} '"
-

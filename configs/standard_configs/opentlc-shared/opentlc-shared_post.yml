@@ -29,10 +29,12 @@
   tasks:
     # This requires password :(
     #- shell: "git clone http://github.com/redhat-gpe/OPEN_Admin /opt/OPEN_Admin/"
-    # git clone https://sborenst:'Weasel11@'@github.com/redhat-gpe/OPEN_Admin /opt/OPEN_Admin
     - name: Configure OPENTLC CloudForms integration
       shell: "useradd opentlc-mgr"
       ignore_errors: true
+    - hostname:
+      name: "bastion.{{guid}}.openshift.opentlc.com"
+      
   #  - shell: "chown -R opentlc-mgr.opentlc-mgr /opt/OPEN_Admin/"
     - file: "path=/opt/OPEN_Admin/ state=directory owner=opentlc-mgr recurse=yes group=opentlc-mgr  mode=0770"
     - shell: "cp -rf /root/.kube /home/opentlc-mgr/"
@@ -48,6 +50,19 @@
           chown -R opentlc-mgr.opentlc-mgr /home/opentlc-mgr/.ssh
           chmod 400 /home/opentlc-mgr/.ssh/authorized_keys
           chmod 700 /home/opentlc-mgr/.ssh
+
+
+- name: Change Environment Hostnames
+  hosts: localhost
+  become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+  tags: [ env-specific, change_internal_hostnames ]
+  tasks:
+  - name: Change hostnames
+    shell: "ansible all  -i /tmp/hosts-{{ config_name }}-{{guid}} -m shell -a 'sudo hostnamectl set-hostname {{ '{{'  }} openshift_hostname {{ '}}' }} '"
+
+
 
 - name: Create env_specific_shares NFS shares
   hosts: nfs
