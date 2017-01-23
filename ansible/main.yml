@@ -164,7 +164,9 @@
     - shell: 'mkdir -p {{ nfs_export_path }}/user-vols/vol\{1..{{ user_vols }}\}'
       tags:
         - nfs_create_user_vol
+      when: "{{user_vols}}"
     - shell: 'chmod -R 0777 {{ nfs_export_path }}/user-vols/*'
+      when: "{{user_vols}}"
       tags:
         - nfs_create_user_vol
 
