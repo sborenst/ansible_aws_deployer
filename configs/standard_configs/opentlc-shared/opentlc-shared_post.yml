@@ -29,6 +29,7 @@
   tasks:
     # This requires password :(
     #- shell: "git clone http://github.com/redhat-gpe/OPEN_Admin /opt/OPEN_Admin/"
+    # git clone https://sborenst:'Weasel11@'@github.com/redhat-gpe/OPEN_Admin /opt/OPEN_Admin
     - name: Configure OPENTLC CloudForms integration
       shell: "useradd opentlc-mgr"
       ignore_errors: true
@@ -67,6 +68,10 @@
         recurse: True
       with_items: '{{ env_specific_shares }}'
 
+    - name: Create user vols
+      shell: "mkdir -p /srv/nfs/user-vols/vol{1..{{user_vols}}}"
+    - name: chmod the user vols
+      shell: "chmod -R 777 /srv/nfs/user-vols"
     - name: Create env-specific exports file
       file:
         path: /etc/exports.d/{{ config_name }}-{{ guid }}-env-specific.exports
@@ -109,6 +114,9 @@
     - name: Create env-specific PVs
       shell: 'oc label pv {{ item }} owner={{ item }}'
       with_items: '{{ env_specific_shares }}'
+    - name: user-pv workaround
+      shell: 'oc delete pv user-vols'
+      ignore_errors: true
 
 - name: env-specific infrastructure
   hosts: masters
@@ -140,6 +148,23 @@
     - name: Add capabilities within anyuid which is not really ideal
       command: "oc patch scc/anyuid --patch '{\"requiredDropCapabilities\":[\"MKNOD\",\"SYS_CHROOT\"]}'"
 
+
+- name: Remove all users from self-provisioners group
+  hosts: masters
+  become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+  tags: [ env-specific, remove_self_provisioners ]
+  tasks:
+
+  - name: Remove system:authenticated from self-provisioner role
+    shell: "oadm policy remove-cluster-role-from-group self-provisioner system:authenticated system:authenticated:oauth"
+    ignore_errors: true
+  - name: create our own OPENTLC-PROJECT-PROVISIONERS
+    shell: "oadm groups new OPENTLC-PROJECT-PROVISIONERS"
+    ignore_errors: true
+  - name: allow OPENTLC-PROJECT-PROVISIONERS members to provision their own projects
+    shell: "oadm policy add-cluster-role-to-group self-provisioner OPENTLC-PROJECT-PROVISIONERS"
 
 
 
@@ -191,34 +216,34 @@
       when: master_config.changed
 
 
-
-- name: Configure pipelines
-  hosts: masters
-  become: yes
-  vars_files:
-    - "./{{ config_name }}_vars.yml"
-  tags: [ env-specific, enable_pipelines ]
-  tasks:
-
-## This adds one every time, should make sure it doesn't
-    - name: Add extensionScripts line to master-config.yaml
-      lineinfile:
-        insertafter: "assetConfig:"
-        dest: /etc/origin/master/master-config.yaml
-        line: "  extensionScripts:\n\ \ \ \ - /etc/origin/master/tech-preview.js"
-        state: present
-
-    - name: create tech-preview.js file with pipelines enabled
-      lineinfile:
-        insertafter: "assetConfig:"
-        dest: /etc/origin/master/tech-preview.js
-        line: "window.OPENSHIFT_CONSTANTS.ENABLE_TECH_PREVIEW_FEATURE['pipelines'] = true"
-        create: yes
-        state: present
-    - name: Restart master service
-      service:
-        name: atomic-openshift-master
-        state: restarted
+# This isn't required anymore in version 3.4, if you are installing an older version you can uncomment these lines.
+# - name: Configure pipelines
+#   hosts: masters
+#   become: yes
+#   vars_files:
+#     - "./{{ config_name }}_vars.yml"
+#   tags: [ env-specific, enable_pipelines ]
+#   tasks:
+#
+# ## This adds one every time, should make sure it doesn't
+#     - name: Add extensionScripts line to master-config.yaml
+#       lineinfile:
+#         insertafter: "assetConfig:"
+#         dest: /etc/origin/master/master-config.yaml
+#         line: "  extensionScripts:\n\ \ \ \ - /etc/origin/master/tech-preview.js"
+#         state: present
+#
+#     - name: create tech-preview.js file with pipelines enabled
+#       lineinfile:
+#         insertafter: "assetConfig:"
+#         dest: /etc/origin/master/tech-preview.js
+#         line: "window.OPENSHIFT_CONSTANTS.ENABLE_TECH_PREVIEW_FEATURE['pipelines'] = true"
+#         create: yes
+#         state: present
+#     - name: Restart master service
+#       service:
+#         name: atomic-openshift-master
+#         state: restarted
 
 
 - name: Cache Docker images

@@ -55,14 +55,3 @@
 - name: debug internal dns zone id
   debug:
     var: internal_zone_id
-#- name: get route53 hosts
-#  shell: aws route53 list-hosted-zones-by-name --dns-name {{zone_public_dns}} --output text | awk '/zonepub/ {print $3}'
-#  register: domain_id
-  #- debug: var="{{domain_id.stdout}}"
-#- name: get route53 hosts
-#  shell: aws route53 get-hosted-zone --id "{{domain_id.stdout}}" --output text | awk '/NAMESERVERS/ {print $2}'
-#  register: name_servers
-  #- debug: msg="{{ item }}"
-#  with_items: name_servers.stdout_lines
-#- debug: msg="Need to create dns record on ipa\n ipa dnsrecord-add opentlc.com {{subdomain_base_short}} --ns-hostname={{name_servers.stdout_lines[0]}}. --ttl=100"
-#  when: "{{idm}}"

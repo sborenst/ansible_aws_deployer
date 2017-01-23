@@ -10,7 +10,7 @@
 
 ### Route 53 Zone ID (AWS)
 HostedZoneId: Z1TQFSYFZUAO0D
-admin_user: shacharb-redhat.com
+admin_user: admin_user
 ### Key Pair name created for EC2 instances (AWS)
 key_name: "default_key_name"
 aws_region: us-east-1
@@ -65,7 +65,7 @@ env_specific_shares:
 admin_project: "opentlc-shared"
 
 user_vols: 200
-user_vols_size: 2Gi
+user_vols_size: 4Gi
 
 cache_images:
   - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
@@ -77,8 +77,9 @@ env_specific_images:
   - "jorgemoralespou/s2i-java:latest"
 
 ### OpenShift Vars
-repo_version: "3.3"
-docker_version: "1.10.3"
+#                            2:1.12.5-14.el7
+repo_version: "3.4"
+docker_version: "1.12.5"
 docker_device: /dev/xvdb
 install_nfs: true
 deploy_openshift: true
@@ -97,7 +98,7 @@ cloudapps_suffix: 'cloudapps.{{subdomain_base}}'
 openshift_master_ldap_ca_file: 'openshift_master_ldap_ca_file=/root/ca.crt'
 ## TODO: This should be registered as a variable. Awk for os verions (OCP).
 ## yum info openshift...
-osrelease: 3.3.1.7
+osrelease: 3.4.0.39
 openshift_master_overwrite_named_certificates: true
 timeout: 60
 
