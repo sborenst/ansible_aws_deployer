@@ -5,7 +5,7 @@
 ###########################################################################
 timeout=60
 ansible_become=yes
-ansible_ssh_user={{ansible_ssh_user}}
+ansible_ssh_user={{ ansible_ssh_user }}
 
 
 ###########################################################################
@@ -14,7 +14,7 @@ ansible_ssh_user={{ansible_ssh_user}}
 
 openshift_image_tag=v{{ osrelease }}
 openshift_pkg_version=-{{ osrelease }}
-docker_version="{{docker_version}}"
+docker_version="{{ docker_version }}"
 deployment_type=openshift-enterprise
 containerized=false
 
@@ -35,14 +35,14 @@ osm_cockpit_plugins=['cockpit-kubernetes']
 ### OpenShift Master Vars
 ###########################################################################
 
-openshift_master_api_port={{master_api_port}}
-openshift_master_console_port={{master_api_port}}
+openshift_master_api_port={{ master_api_port }}
+openshift_master_console_port={{ master_api_port }}
 
 openshift_master_cluster_method=native
-openshift_master_cluster_hostname={{master_lb_dns}}
-openshift_master_cluster_public_hostname={{master_lb_dns}}
-openshift_master_default_subdomain={{cloudapps_suffix}}
-openshift_master_overwrite_named_certificates={{openshift_master_overwrite_named_certificates}}
+openshift_master_cluster_hostname={{ master_lb_dns }}
+openshift_master_cluster_public_hostname={{ master_lb_dns }}
+openshift_master_default_subdomain={{ cloudapps_suffix }}
+openshift_master_overwrite_named_certificates={{ openshift_master_overwrite_named_certificates }}
 
 
 
@@ -58,7 +58,7 @@ openshift_portal_net=172.30.0.0/16
 
 
 #os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
-{{multi_tenant_setting}}
+{{ multi_tenant_setting }}
 
 
 ###########################################################################
@@ -73,27 +73,27 @@ openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 
 ###########################################################################
 
 # Enable cluster metrics
-openshift_hosted_metrics_deploy={{install_metrics}}
+openshift_hosted_metrics_deploy={{ install_metrics }}
 openshift_hosted_metrics_storage_kind=nfs
 openshift_hosted_metrics_storage_access_modes=['ReadWriteOnce']
-openshift_hosted_metrics_storage_host={{hostvars[groups['nfs'][0]]['private_hostname']}}
+openshift_hosted_metrics_storage_host={{ hostvars[groups['nfs'][0]]['private_hostname'] }}
 openshift_hosted_metrics_storage_nfs_directory=/srv/nfs
 openshift_hosted_metrics_storage_nfs_options='*(rw,root_squash)'
 openshift_hosted_metrics_storage_volume_name=metrics
 openshift_hosted_metrics_storage_volume_size=10Gi
-openshift_hosted_metrics_public_url=https://metrics.{{cloudapps_suffix}}/hawkular/metrics
+openshift_hosted_metrics_public_url=https://metrics.{{ cloudapps_suffix }}/hawkular/metrics
 
 # Enable cluster logging
-openshift_hosted_logging_deploy={{install_logging}}
+openshift_hosted_logging_deploy={{ install_logging }}
 openshift_hosted_logging_storage_kind=nfs
 openshift_hosted_logging_storage_access_modes=['ReadWriteOnce']
 openshift_hosted_logging_storage_nfs_directory=/srv/nfs
 openshift_hosted_logging_storage_nfs_options='*(rw,root_squash)'
 openshift_hosted_logging_storage_volume_name=logging
 openshift_hosted_logging_storage_volume_size=10Gi
-openshift_hosted_logging_hostname=kibana.{{cloudapps_suffix}}
+openshift_hosted_logging_hostname=kibana.{{ cloudapps_suffix }}
 openshift_hosted_logging_elasticsearch_cluster_size=1
-openshift_master_logging_public_url=https://kibana.{{cloudapps_suffix}}
+openshift_master_logging_public_url=https://kibana.{{ cloudapps_suffix }}
 
 
 ###########################################################################

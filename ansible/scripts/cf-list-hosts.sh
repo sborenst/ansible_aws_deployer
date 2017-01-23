@@ -23,5 +23,5 @@ aws ec2 describe-instances --output text \
   --filters "Name=instance-state-name,Values=running" \
     "Name=tag:Project,Values=$2" \
    $nodefilter \
-  --query 'Reservations[*].Instances[*].[ PublicDnsName,PrivateDnsName,Placement.AvailabilityZone,Tags[?Key==`AnsibleGroup`].Value[] ]' | \
+  --query 'Reservations[*].Instances[*].[ PublicDnsName,PrivateDnsName,Placement.AvailabilityZone, PrivateIpAddress,Tags[?Key==`AnsibleGroup`].Value[] ]' | \
   sed '$!N;s/\n/ /' | sort -k 3

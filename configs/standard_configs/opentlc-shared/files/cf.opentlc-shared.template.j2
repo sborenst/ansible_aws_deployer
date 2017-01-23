@@ -1,48 +1,45 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Parameters": {},
+  "Parameters": { },
   "Mappings": {
     "RegionMapping": {
       "us-east-1": {
-        "AMI": "ami-b63769a1"
+        "AMI": "ami-2051294a"
       },
       "us-east-2": {
-        "AMI": "ami-0932686c"
+        "AMI": "Not Available"
       },
       "us-west-1": {
-        "AMI": "ami-2cade64c"
+        "AMI": "ami-d1315fb1"
       },
       "us-west-2": {
-        "AMI": "ami-6f68cf0f"
-      },
-      "ap-south-1": {
-        "AMI": "ami-7c9bef13"
+        "AMI": "ami-775e4f16"
       },
       "eu-west-1": {
-        "AMI": "ami-02ace471"
+        "AMI": "ami-8b8c57f8"
       },
       "eu-central-1": {
-        "AMI": "ami-e4c63e8b"
+        "AMI": "ami-875042eb"
       },
       "ap-northeast-1": {
-        "AMI": "ami-5de0433c"
+        "AMI": "ami-0dd8f963"
       },
       "ap-northeast-2": {
-        "AMI": "ami-6447930a"
+        "AMI": "ami-44db152a"
       },
       "ap-southeast-1": {
-        "AMI": "ami-2c95344f"
+        "AMI": "ami-3f03c55c"
       },
       "ap-southeast-2": {
-        "AMI": "ami-39ac915a"
+        "AMI": "ami-e0c19f83"
       },
       "sa-east-1": {
-        "AMI": "ami-7de77b11"
+        "AMI": "ami-27b3094b"
       }
     },
     "DNSMapping": {
       "us-east-1": {
-        "domain": "ec2.internal"
+        "domain": "us-east-1.compute.internal"
       },
       "us-west-1": {
         "domain": "us-west-1.compute.internal"
@@ -180,6 +177,21 @@
         ]
       }
     },
+    "ZabbixSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Node",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "zabbix_sg"
+          }
+        ]
+      }
+    },
     "MasterSG": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -267,8 +279,8 @@
             "AMI"
           ]
         },
-        "InstanceType": "{{ master_instance_type }}",
-        "KeyName": "roadshow",
+        "InstanceType": "{{master_instance_type}}",
+        "KeyName": "{{key_name}}",
         "SecurityGroupIds": [
           {
             "Fn::GetAtt": [
@@ -298,18 +310,29 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
-              "VolumeSize": 15,
-              "VolumeType": "gp2"
+              "VolumeSize": 20
             }
           }
         ]
+      }
+    },
+    "zoneinternalidns": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "{{ zone_internal_dns }}",
+        "VPCs" :  [{
+      "VPCId": { "Ref" : "Vpc" },
+      "VPCRegion": { "Ref": "AWS::Region" } } ],
+        "HostedZoneConfig": {
+          "Comment": "Created By Cloudformation"
+        }
       }
     },
     "MasterDNS": {
       "Type": "AWS::Route53::RecordSetGroup",
       "DependsOn": "Master",
       "Properties": {
-        "HostedZoneId": "Z226QCZPDICGRI",
+        "HostedZoneId": "{{HostedZoneId}}",
         "RecordSets": [
           {
             "Name": "{{master_public_dns}}",
@@ -319,6 +342,28 @@
               {
                 "Fn::GetAtt": [
                   "Master",
+                  "PublicIp"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "BastionDNS": {
+      "Type": "AWS::Route53::RecordSetGroup",
+      "DependsOn": "Master",
+      "Properties": {
+        "HostedZoneId": "{{HostedZoneId}}",
+        "RecordSets": [
+          {
+            "Name": "{{bastion_public_dns}}",
+            "Type": "A",
+            "TTL": "10",
+            "ResourceRecords": [
+              {
+                "Fn::GetAtt": [
+                  "Bastion",
                   "PublicIp"
                 ]
               }
@@ -339,8 +384,8 @@
             "AMI"
           ]
         },
-        "InstanceType": "{{ infranode_instance_type }}",
-        "KeyName": "roadshow",
+        "InstanceType": "{{infranode_instance_type}}",
+        "KeyName": "{{key_name}}",
         "SecurityGroupIds": [
           {
             "Fn::GetAtt": [
@@ -370,8 +415,12 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
+<<<<<<< HEAD:ansible/files/cf_templates/cf.bu-workshop.template.j2
               "VolumeSize": 80,
               "VolumeType": "gp2"
+=======
+              "VolumeSize": 60
+>>>>>>> origin/master:configs/standard_configs/opentlc-shared/files/cf.opentlc-shared.template.j2
             }
           }
         ]
@@ -381,7 +430,7 @@
       "Type": "AWS::Route53::RecordSetGroup",
       "DependsOn": "InfraNode",
       "Properties": {
-        "HostedZoneId": "Z226QCZPDICGRI",
+        "HostedZoneId": "{{HostedZoneId}}",
         "RecordSets": [
           {
             "Name": "{{cloudapps_dns}}",
@@ -412,8 +461,8 @@
             "AMI"
           ]
         },
-        "InstanceType": "{{ node_instance_type }}",
-        "KeyName": "roadshow",
+        "InstanceType": "{{node_instance_type}}",
+        "KeyName": "{{key_name}}",
         "SecurityGroups": [
           {
             "Ref": "NodeSG"
@@ -423,8 +472,12 @@
           {
             "DeviceName": "/dev/xvdb",
             "Ebs": {
+<<<<<<< HEAD:ansible/files/cf_templates/cf.bu-workshop.template.j2
               "VolumeSize": 80,
               "VolumeType": "gp2"
+=======
+              "VolumeSize": 60
+>>>>>>> origin/master:configs/standard_configs/opentlc-shared/files/cf.opentlc-shared.template.j2
             }
           }
         ]
@@ -433,12 +486,12 @@
     "AppAsg": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "DesiredCapacity": {{ num_nodes }},
+        "DesiredCapacity": {{node_instance_count}},
         "LaunchConfigurationName": {
           "Ref": "AppLC"
         },
-        "MaxSize": {{ num_nodes }},
-        "MinSize": {{ num_nodes }},
+        "MaxSize": 10,
+        "MinSize": 1,
         "Tags": [
           {
             "Key": "Name",
@@ -475,8 +528,8 @@
             "AMI"
           ]
         },
-        "InstanceType": "{{ nfs_instance_type }}",
-        "KeyName": "roadshow",
+        "InstanceType": "{{nfs_instance_type}}",
+        "KeyName": "{{key_name}}",
         "SecurityGroupIds": [
           {
             "Fn::GetAtt": [
@@ -525,8 +578,8 @@
             "AMI"
           ]
         },
-        "InstanceType": "{{ bastion_instance_type }}",
-        "KeyName": "roadshow",
+        "InstanceType": "{{bastion_instance_type}}",
+        "KeyName": "{{key_name}}",
         "SecurityGroupIds": [
           {
             "Fn::GetAtt": [
@@ -557,11 +610,11 @@
     "RegistryS3": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
-        "BucketName": "{{config}}-{{guid}}",
+        "BucketName": "{{ config_name }}-{{ guid }}",
         "Tags": [
           {
             "Key": "Name",
-            "Value": "s3-{{config}}-{{guid}}"
+            "Value": "s3-{{ config_name }}-{{ guid }}"
           },
           {
             "Key": "Project",
@@ -576,7 +629,12 @@
       "Description": "The ID of the S3 Bucket",
       "Value": {
         "Ref": "RegistryS3"
+      }},
+    "Route53internalzoneOutput": {
+      "Description": "The ID of the internal route 53 zone",
+      "Value": {
+        "Ref": "zoneinternalidns"
       }
-    }
   }
+}
 }

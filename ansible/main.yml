@@ -1,0 +1,207 @@
+#vim: set ft=ansible:
+---
+- name: Include standard configs (default) and custom_configs when present.
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Check for custom_configs
+      find:
+        paths: "../configs/custom_config"
+        recurse: yes
+        file_type: file
+      failed_when: no
+      changed_when: false
+      register: custom_config
+
+    - include_vars:
+        dir: "../configs/standard_configs/{{ config_name }}"
+        depth: 1
+        files_matching: '.*vars.*yml'
+
+    - include_vars:
+        dir: "../configs/custom_config"
+        depth: 1
+        files_matching: '.yml'
+      when: custom_config.matched|int != 0
+
+- name: Starting environment deployment
+  hosts: localhost
+  connection: local
+  gather_facts: False
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+  tasks:
+    - name: Generate CF Template and Launch CF Template
+      gather_facts: False
+      vars_files:
+        - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+        - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+      include: ./provision_cf.yml
+      tags:
+        - provisioning
+        - gen_cf_template
+        - provisiong_cf_template
+
+    - name: Creating Dynamic Inventory
+      gather_facts: False
+      vars_files:
+        - "../configs/standard_configs//{{ config_name }}//{{ config_name }}_vars.yml"
+        - "../configs/standard_configs//{{ config_name }}//{{ config_name }}_secret_vars.yml"
+      include: ./dynamic_inventory.yml
+      tags:
+        - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
+
+    - name: create internal dns names
+      template:
+        src: ./files/internal_dns.json.j2
+        dest: /tmp/internal_dns-{{ config_name }}-{{ guid }}.json
+      tags:
+        - internal_dns_creation
+
+    - name: create internal dns names
+      shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config_name }}-{{ guid }}.json"
+      ignore_errors: true
+      tags:
+        - internal_dns_creation
+
+    - name: Added Bastion Proxy to local ~/.ssh/config file
+      blockinfile:
+        dest: ~/.ssh/config
+        marker: "##### {mark} ADDED BASTION PROXY HOST {{hostvars[groups['bastions'][0]]['public_hostname']}} {{ config_name }}-{{ guid }} ######"
+        content: |
+            Host {{hostvars[groups['bastions'][0]]['public_hostname']}}
+              Hostname {{hostvars[groups['bastions'][0]]['public_hostname']}}
+              ForwardAgent yes
+              IdentityFile ~/.ssh/{{key_name}}.pem
+              IdentitiesOnly yes
+              User ec2-user
+              ControlMaster auto
+              ControlPath /tmp/{{ config_name }}
+              ControlPersist 5m
+              ForwardAgent yes
+              StrictHostKeyChecking no
+      tags:
+        - bastion_proxy_config
+        - config_ssh_config_file
+
+    - name: Add all hosts to local  ~/.ssh/config file
+      blockinfile:
+        dest: ~/.ssh/config
+        marker: "##### {mark} ADDED Node Proxy Config  {{ item }} {{ config_name }}-{{ guid }} ######"
+        block: |
+            Host {{ item }}
+              Hostname {{ item }}
+              User ec2-user
+              IdentityFile {{ hostvars[groups['bastions'][0]]['ansible_ssh_private_key_file'] }}
+              ProxyCommand ssh {{ hostvars[groups['bastions'][0]]['public_hostname'] }} -W %h:%p
+              ForwardAgent yes
+              StrictHostKeyChecking no
+      with_items:
+        - "{{ groups['allhosts'] }}"
+      tags:
+        - bastion_proxy_config
+        - config_ssh_config_file
+
+    - name: Generate ssh.cfg Template
+      template:
+        src: files/ssh.cfg.j2
+        dest: /tmp/ssh-{{ config_name }}-{{ guid }}.cfg
+      tags:
+        - bastion_proxy_config
+        - create_ssh_cfg_template
+
+- name: Wait for readiness
+  hosts: bastions
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  gather_facts: False
+  any_errors_fatal: true
+  tags:
+    - common_tasks
+    - wait_ssh
+  tasks:
+    - name: wait for host to be available
+      wait_for:
+        host: '{{ inventory_hostname }}'
+        port: 22
+        search_regex: OpenSSH
+      with_items:
+        - "{{ groups['allhosts'] }}"
+
+
+- name: Configuring common Hosts
+  hosts: bastions,nfs,masters,infranodes,nodes
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
+  roles:
+    - common
+  tags:
+    - common_tasks
+
+- name: Configuring Bastion Hosts
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  roles:
+    - bastion
+  tags:
+    - bastion_tasks
+
+- name: Creating NFS exports Directory Structure
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  tags:
+    - nfs_tasks
+  tasks:
+## TODO: Convert these to file module.
+## Problem with file module is that each vol is a separate connection and it takes forever.
+    - shell: 'mkdir -p {{ nfs_export_path }}/user-vols/vol\{1..{{ user_vols }}\}'
+      tags:
+        - nfs_create_user_vol
+    - shell: 'chmod -R 0777 {{ nfs_export_path }}/user-vols/*'
+      tags:
+        - nfs_create_user_vol
+
+    # - name: Creating multiple uservol direcrtories
+    #   file: dest={{ nfs_export_path }}/user-vols/vol{{ item }}  state=directory
+    #   with_sequence: start=1 end={{ user_vols }}
+
+- name: Configuring nfs Host
+  hosts: nfs
+  become: yes
+  vars_files:
+    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+  roles:
+    -  { role: nfs, when: "{{ install_nfs }}" }
+  tags:
+    - nfs_tasks
+
+- name: Deploy OpenShift Software
+  include: ./deploy_openshift.yml
+  when: "{{deploy_openshift}}"
+  tags:
+    - deploy_openshift
+
+- name: Deploy OpenShift Post Install
+  include: ./deploy_openshift_post.yml
+  when: "{{ deploy_openshift_post }}"
+  tags:
+    - deploy_openshift_post
+
+- name: env-spcific Post Install
+  include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_post.yml"
+  when: "{{deploy_env_post}}"
+  tags:
+    - env_specific_post
+
+- name: env-spcific Post Install tests
+  include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_tests.yml"
+  when: "{{deploy_env_post}}"
+  tags:
+    - env_specific_tests
