@@ -1,4 +1,4 @@
-#vim: set ft=ansible:
+# vim: set ft=ansible:
 ---
 - name: Include standard configs (default) and custom_configs when present.
   hosts: localhost
