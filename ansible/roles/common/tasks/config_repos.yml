@@ -12,7 +12,7 @@
   file:
     path: /etc/yum.repos.d/{{ item }}
     state: absent
-  with_items: repodircontents.stdout_lines
+  with_items: "{{ repodircontents.stdout_lines }}"
   tags:
     - configure_repos
     - remove_existing_repos
