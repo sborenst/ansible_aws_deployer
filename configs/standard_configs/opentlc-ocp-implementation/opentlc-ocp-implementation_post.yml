@@ -7,10 +7,13 @@
     - "./{{ config_name }}_vars.yml"
     - "./{{ config_name }}_secret_vars.yml"
 
-- name: Configure Bastion for CF integration
-  hosts: bastions
+- name: Change Environment Hostnames
+  hosts: localhost
   become: yes
   vars_files:
     - "./{{ config_name }}_vars.yml"
-  tags: [ env-specific, cf_integration ]
+  tags: [ env-specific, change_internal_hostnames ] 
   tasks:
+  - name: Change hostnames 
+    shell: "ansible all  -i /tmp/hosts-{{ config_name }}-{{guid}} -m shell -a 'sudo hostnamectl set-hostname {{ '{{'  }} openshift_hostname {{ '}}' }} '"
+
