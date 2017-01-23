@@ -13,15 +13,17 @@
       changed_when: false
       register: custom_config
 
-    - include_vars:
+    - name: Include standard configs
+      include_vars:
         dir: "../configs/standard_configs/{{ config_name }}"
         depth: 1
-        files_matching: '.*vars.*yml'
+        files_matching: '.*vars.*yml$'
 
-    - include_vars:
+    - name: Include custom configs
+      include_vars:
         dir: "../configs/custom_config"
         depth: 1
-        files_matching: '.yml'
+        files_matching: '.yml$'
       when: custom_config.matched|int != 0
 
 - name: Starting environment deployment
