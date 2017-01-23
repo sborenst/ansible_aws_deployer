@@ -1,0 +1,7 @@
+## These are variables that are set by default for all nodes.
+## Place any variable that is persistent across
+## all playbooks here.
+
+config_name: opentlc-shared
+custom_config_path: configs/custom_config
+standard_configs_path: configs/standard_configs

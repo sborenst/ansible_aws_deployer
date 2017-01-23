@@ -5,15 +5,28 @@
 
 - name: copy the environment .pem key
   become: true
-  copy: src=~/.ssh/{{ key_name }}.pem dest=/root/.ssh/{{key_name}}.pem owner=root group=root mode=0400
-  tags: [ copy_env_private_key ]
-
+  copy:
+    src: ~/.ssh/{{ key_name }}.pem
+    dest: /root/.ssh/{{ key_name }}.pem
+    owner: root
+    group: root
+    mode: 0400
+  tags:
+    - copy_env_private_key
+# TODO: Test splitting this into literal
 - name: Generate host .ssh/config Template
   become: no
-  local_action: template src=../files/bastion_ssh_config.j2 dest=../workdir/ssh-config-{{config}}-{{guid}}
-  tags: [ gen_sshconfig_file ]
+  local_action: template src=../files/bastion_ssh_config.j2 dest=/tmp/ssh-config-{{ config_name }}-{{ guid }}
+  tags:
+    - gen_sshconfig_file
 
 - name: copy over host .ssh/config Template
   become: true
-  copy: src=../workdir/ssh-config-{{config}}-{{guid}} dest=/root/.ssh/config owner=root group=root mode=0400
-  tags: [ copy_sshconfig_file ]
+  copy:
+    src: /tmp/ssh-config-{{ config_name }}-{{ guid }}
+    dest: /root/.ssh/config
+    owner: root
+    group: root
+    mode: 0400
+  tags:
+    - copy_sshconfig_file
