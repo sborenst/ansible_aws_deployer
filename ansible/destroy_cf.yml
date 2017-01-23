@@ -1,3 +1,4 @@
+
 - name: Starting environment deployment
   hosts: localhost
   connection: local
@@ -8,6 +9,38 @@
 
   tasks:
 ######################### Launch CF Template
+    - name: Launch CloudFormation template
+      cloudformation:
+        stack_name: "{{ project_tag }}"
+        state: "present"
+        region: "{{ aws_region }}"
+        disable_rollback: false
+        template: "/tmp/cf.{{ config_name }}.{{ guid }}.json"
+        tags:
+          Stack: "project {{ project_tag }}"
+      tags:
+        - provisioning
+        - provision_cf_template
+      register: cloudformation_out
+
+    - name: Store S3 Bucket ID
+      set_fact:
+        s3_bucket: "{{ cloudformation_out.stack_outputs.RegistryS3Output }}"
+
+    - debug:
+        msg: "bucket is {{ s3_bucket }}"
+
+    - name: Store internal route53 ID
+      set_fact:
+        internal_zone_id: "{{ cloudformation_out.stack_outputs.Route53internalzoneOutput }}"
+    - name: Creating Dynamic Inventory
+      gather_facts: False
+      vars_files:
+        - "../configs/standard_configs//{{ config_name }}//{{ config_name }}_vars.yml"
+        - "../configs/standard_configs//{{ config_name }}//{{ config_name }}_secret_vars.yml"
+      include: ./dynamic_inventory.yml
+      tags:
+        - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
     - set_fact:
         DNS_action: "DELETE"
 
