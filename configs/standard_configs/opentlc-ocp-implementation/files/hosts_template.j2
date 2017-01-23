@@ -1,0 +1,38 @@
+[OSEv3:vars]
+
+###########################################################################
+### Ansible Vars
+###########################################################################
+timeout=60
+ansible_become=yes
+ansible_ssh_user={{ansible_ssh_user}}
+
+
+[OSEv3:children]
+masters
+nodes
+nfs
+
+[masters]
+{% for host in groups['masters'] %}
+{{ hostvars[host]['private_hostname'] }}
+{% endfor %}
+
+[nodes]
+{% for host in groups['masters'] %}
+{{ hostvars[host]['private_hostname'] }} openshift_hostname=master{{loop.index}}.{{chomped_zone_internal_dns}} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','openshift_schedulable':'False','region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{% endfor %}
+{% for host in groups['infranodes'] %}
+{{ hostvars[host]['private_hostname'] }} openshift_hostname=infranode{{loop.index}}.{{chomped_zone_internal_dns}} openshift_ip={{hostvars[host]['private_ip']}} ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','region': 'infra', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{% endfor %}
+
+{% for host in groups['nodes'] %}
+{{ hostvars[host]['private_hostname'] }} openshift_hostname=node{{loop.index}}.{{chomped_zone_internal_dns}} openshift_ip={{hostvars[host]['private_ip']}}  ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}} openshift_node_labels="{'logging':'true','region': 'primary', 'zone': '{{hostvars[host]['availability_zone']}}'}"
+{% endfor %}
+
+
+
+[nfs]
+{% for host in groups['nfs'] %}
+{{ hostvars[host]['private_hostname'] }} openshift_hostname=nfs{{loop.index}}.{{chomped_zone_internal_dns}} openshift_ip={{hostvars[host]['private_ip']}}  ansible_ssh_user={{hostvars[host]['ansible_ssh_user']}} ansible_ssh_private_key_file={{hostvars[host]['ansible_ssh_private_key_file']}}
+{% endfor %}
