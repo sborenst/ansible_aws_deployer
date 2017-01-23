@@ -52,6 +52,9 @@
       tags:
         - dynamic_inventory,get_hosts,populate_hosts,generate_ansible_host_file
 
+    - set_fact:
+        DNS_action: "CREATE"
+
     - name: create internal dns names
       template:
         src: ./files/internal_dns.json.j2

@@ -3,7 +3,7 @@
   "Changes": [
 {% for host in groups['nodes'] %}
     {
-      "Action": "CREATE",
+      "Action": "{{DNS_action}}",
       "ResourceRecordSet": {
         "Name": "node{{loop.index}}.{{zone_internal_dns}}",
         "Type": "A",
@@ -14,7 +14,7 @@
 {% endfor %}
 {% for host in groups['infranodes'] %}
     {
-      "Action": "CREATE",
+      "Action": "{{DNS_action}}",
       "ResourceRecordSet": {
         "Name": "infranode{{loop.index}}.{{zone_internal_dns}}",
         "Type": "A",
@@ -25,7 +25,7 @@
 {% endfor %}
 {% for host in groups['masters'] %}
     {
-      "Action": "CREATE",
+      "Action": "{{DNS_action}}",
       "ResourceRecordSet": {
         "Name": "master{{loop.index}}.{{zone_internal_dns}}",
         "Type": "A",
@@ -36,7 +36,7 @@
 {% endfor %}
 {% for host in groups['nfs'] %}
     {
-      "Action": "CREATE",
+      "Action": "{{DNS_action}}",
       "ResourceRecordSet": {
         "Name": "nfs{{loop.index}}.{{zone_internal_dns}}",
         "Type": "A",
@@ -47,7 +47,7 @@
 {% endfor %}
 {% for host in groups['bastions'] %}
     {
-      "Action": "CREATE",
+      "Action": "{{DNS_action}}",
       "ResourceRecordSet": {
         "Name": "bastion{{loop.index}}.{{zone_internal_dns}}",
         "Type": "A",
@@ -56,6 +56,6 @@
       }
     }
 {% endfor %}
-    
+
   ]
 }

@@ -8,6 +8,22 @@
 
   tasks:
 ######################### Launch CF Template
+    - set_fact:
+        DNS_action: "DELETE"
+
+    - name: create internal dns names
+      template:
+        src: ./files/internal_dns.json.j2
+        dest: /tmp/internal_dns-{{ config_name }}-{{ guid }}_DELETE.json
+      tags:
+        - internal_dns_creation
+
+    - name: create internal dns names
+      shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config_name }}-{{ guid }}_DELETE.json"
+      ignore_errors: true
+      tags:
+        - internal_dns_creation
+
     - name: launch cloudformation template
       cloudformation:
         stack_name: "{{project_tag}}"
