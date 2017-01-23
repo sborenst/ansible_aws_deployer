@@ -1,0 +1,12 @@
+######################### env-specific specific
+
+
+- name: opentlc-ocp-implementation tests
+  hosts: masters[0]
+  become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_secret_vars.yml"
+
+  tags: [ env-specific, cf_integration ]
+  tasks:

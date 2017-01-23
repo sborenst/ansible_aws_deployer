@@ -1,0 +1,16 @@
+######################### env-specific specific
+- name: Include vars and secret vars
+  hosts: localhost
+  connection: local
+  tasks:
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+    - "./{{ config_name }}_secret_vars.yml"
+
+- name: Configure Bastion for CF integration
+  hosts: bastions
+  become: yes
+  vars_files:
+    - "./{{ config_name }}_vars.yml"
+  tags: [ env-specific, cf_integration ]
+  tasks:

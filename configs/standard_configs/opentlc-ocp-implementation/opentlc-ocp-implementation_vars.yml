@@ -1,0 +1,126 @@
+## TODO: What variables can we strip out of here to build complex variables?
+## i.e. what can we add into group_vars as opposed to config_vars?
+## Example: We don't really need "subdomain_base_short". If we want to use this,
+## should just toss in group_vars/all.
+### Also, we should probably just create a variable reference in the README.md
+### For now, just tagging comments in line with configuration file.
+
+###### VARIABLES YOU SHOULD CONFIGURE FOR YOUR DEPLOYEMNT
+###### OR PASS as "-e" args to ansible-playbook command
+
+### Route 53 Zone ID (AWS)
+HostedZoneId: Z1TQFSYFZUAO0D
+# This should be the student ID
+admin_user: shacharb-redhat.com
+
+### Key Pair name created for EC2 instances (AWS)
+key_name: "default_key_name"
+aws_region: us-east-1
+
+## Networking (AWS)
+guid: defaultguid
+subdomain_base_short: "{{ guid }}"
+subdomain_base_suffix: ".openshift.opentlc.com"
+subdomain_base: "{{subdomain_base_short}}{{subdomain_base_suffix}}"
+
+## Environment Sizing
+
+bastion_instance_type: "t2.large"
+master_instance_type: "t2.large"
+etcd_instance_type: "{{master_instance_type}}"
+infranode_instance_type: "r3.xlarge"
+node_instance_type: "r3.xxlarge" # r3.2xlarge
+nfs_instance_type: "c3.large"
+
+node_instance_count: 3
+
+
+
+###### VARIABLES YOU SHOULD ***NOT*** CONFIGURE FOR YOUR DEPLOYEMNT
+###### You can, but you usually wouldn't need to.
+ansible_ssh_user: ec2-user
+remote_user: ec2-user
+
+rhel_repos:
+  - rhel-7-server-rpms
+  - rhel-7-server-extras-rpms
+  - rhel-7-server-ose-{{repo_version}}-rpms
+
+use_subscription_manager: false
+use_opentlc_repos: true
+
+## NFS Server settings
+nfs_vg: nfsvg
+nfs_pvs: /dev/xvdb
+nfs_export_path: /srv/nfs
+
+nfs_shares:
+  - user-vols
+  - es-storage
+
+cache_images:
+  - "registry.access.redhat.com/jboss-eap-7/eap70-openshift:latest"
+  - "registry.access.redhat.com/rhscl/mongodb-32-rhel7:latest"
+
+## This might get removed
+env_specific_images:
+  - "openshiftdemos/parksmap:0.4"
+  - "jorgemoralespou/s2i-java:latest"
+
+### OpenShift Vars
+#                            2:1.12.5-14.el7
+repo_version: "3.4"
+docker_version: "1.12.5"
+docker_device: /dev/xvdb
+install_nfs: true
+deploy_openshift: false
+deploy_openshift_post: false
+deploy_env_post: true
+idm: false
+install_metrics: false
+install_logging: false
+
+#osrelease: 3.4.0.39
+timeout: 60
+
+### CLOUDFORMATIONS vars
+
+project_tag: "{{ config_name }}-{{ guid }}"
+create_internal_dns_entries: true
+zone_internal_dns: "{{subdomain_base}}.internal."
+chomped_zone_internal_dns: "{{subdomain_base}}.internal"
+zone_public_dns: "{{subdomain_base}}."
+cloudapps_dns: '*.cloudapps.{{subdomain_base}}.'
+
+master_public_dns: "master.{{subdomain_base}}."
+bastion_public_dns: "bastion.{{subdomain_base}}."
+
+vpcid_cidr_block: "192.168.0.0/16"
+vpcid_name_tag: "{{subdomain_base}}"
+
+az_1_name: "{{ aws_region }}a"
+az_2_name: "{{ aws_region }}b"
+
+subnet_private_1_cidr_block: "192.168.2.0/24"
+subnet_private_1_az: "{{ az_2_name }}"
+subnet_private_1_name_tag: "{{subdomain_base}}-private"
+
+subnet_private_2_cidr_block: "192.168.1.0/24"
+subnet_private_2_az: "{{ az_1_name }}"
+subnet_private_2_name_tag: "{{subdomain_base}}-private"
+
+subnet_public_1_cidr_block: "192.168.10.0/24"
+subnet_public_1_az: "{{ az_1_name }}"
+subnet_public_1_name_tag: "{{subdomain_base}}-public"
+
+subnet_public_2_cidr_block: "192.168.20.0/24"
+subnet_public_2_az: "{{ az_2_name }}"
+subnet_public_2_name_tag: "{{subdomain_base}}-public"
+
+dopt_domain_name: "{{ aws_region }}.compute.internal"
+
+rtb_public_name_tag: "{{subdomain_base}}-public"
+rtb_private_name_tag: "{{subdomain_base}}-private"
+
+
+cf_template_description: "{{ config_name }}-{{ guid }} template "
