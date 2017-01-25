@@ -1,3 +1,5 @@
+# vim: set ft=ansible:
+---
 - name: Generate CloudFormation Template from  the new location
   template:
     src: ../configs/standard_configs/{{ config_name }}/files/cf.{{ config_name }}.template.j2
@@ -32,7 +34,9 @@
 - name: Store internal route53 ID
   set_fact:
     internal_zone_id: "{{ cloudformation_out.stack_outputs.Route53internalzoneOutput }}"
+  when: "{{ use_internal_dns_zone }}"
 
 - name: debug internal dns zone id
   debug:
     var: internal_zone_id
+  when: "{{ use_internal_dns_zone }}"
