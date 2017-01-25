@@ -1,0 +1,7 @@
+- name: Workshop post install tests
+  hosts: localhost
+  become: no
+  gather_facts: no
+  tasks:
+    - meta: noop
+
