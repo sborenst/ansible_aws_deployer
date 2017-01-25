@@ -58,12 +58,14 @@
       template:
         src: ./files/internal_dns.json.j2
         dest: /tmp/internal_dns-{{ config_name }}-{{ guid }}.json
+      when: "{{ use_internal_dns_zone | default(true) }}"
       tags:
         - internal_dns_creation
 
     - name: create internal dns names
       shell: "aws route53 change-resource-record-sets --hosted-zone-id {{internal_zone_id}}  --change-batch file:///tmp/internal_dns-{{ config_name }}-{{ guid }}.json"
       ignore_errors: true
+      when: "{{ use_internal_dns_zone | default(true) }}"
       tags:
         - internal_dns_creation
 
@@ -135,6 +137,7 @@
 - name: Configuring common Hosts
   hosts: bastions,nfs,masters,infranodes,nodes
   become: yes
+  any_errors_fatal: yes
   vars_files:
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
@@ -146,6 +149,7 @@
 - name: Configuring Bastion Hosts
   hosts: bastions
   become: yes
+  any_errors_fatal: true
   vars_files:
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
@@ -156,6 +160,7 @@
 - name: Creating NFS exports Directory Structure
   hosts: nfs
   become: yes
+  any_errors_fatal: true
   vars_files:
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   tags:
@@ -177,33 +182,34 @@
 - name: Configuring nfs Host
   hosts: nfs
   become: yes
+  any_errors_fatal: true
   vars_files:
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
   roles:
-    -  { role: nfs, when: "{{ install_nfs }}" }
+    -  { role: nfs, when: "{{ install_nfs | default(true) }}" }
   tags:
     - nfs_tasks
 
 - name: Deploy OpenShift Software
   include: ./deploy_openshift.yml
-  when: "{{deploy_openshift}}"
+  when: "{{ deploy_openshift | default(true) }}"
   tags:
     - deploy_openshift
 
 - name: Deploy OpenShift Post Install
   include: ./deploy_openshift_post.yml
-  when: "{{ deploy_openshift_post }}"
+  when: "{{ deploy_openshift_post | default(true) }}"
   tags:
     - deploy_openshift_post
 
 - name: env-spcific Post Install
   include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_post.yml"
-  when: "{{deploy_env_post}}"
+  when: "{{ deploy_env_post | default(true) }}"
   tags:
     - env_specific_post
 
 - name: env-spcific Post Install tests
   include: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_tests.yml"
-  when: "{{deploy_env_post}}"
+  when: "{{ test_env_post | default(false) }}"
   tags:
     - env_specific_tests
