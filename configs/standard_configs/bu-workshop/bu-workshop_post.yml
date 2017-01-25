@@ -1,240 +1,10 @@
 # vim: set ft=ansible:
 ---
-- name: Starting environment deployment
-  hosts: localhost
-  connection: local
-  gather_facts: False
-  vars_files:
-  - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
-
-  tasks:
-
-######################### Generate CF Template
-######################### Launch CF Template
-
-  - name: Provisioning Environment
-    gather_facts: False
-    vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
-    include: ./provision_cf.yml
-    tags:
-      - provisioning
-      - gen_cf_template
-      - provision_cf_template
-
-
-
-######################### Populate Dynamic Inventory
-
-  - name: Creating Dynamic Inventory
-    gather_facts: False
-    vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
-    include: ./dynamic_inventory.yml
-    tags:
-      - dynamic_inventory
-      - get_hosts
-      - populate_hosts
-      - generate_ansible_host_file
-
-
-######################### LOCAL Bastion Proxy Config
-  - name: Generate ssh.cfg Template
-    template:
-      src: files/ssh.cfg.j2
-      dest: /tmp/ssh-{{ config_name }}-{{ guid }}.cfg
-    tags:
-      - bastion_proxy_config
-      - create_ssh_cfg_template
-## Need to add a check here to see if this was already done
-  - name: copy ssh.cfg into local ~.ssh/Config
-    shell: "cat /tmp/ssh-{{ config_name }}-{{ guid }}.cfg >> ~/.ssh/config"
-    tags:
-      - bastion_proxy_config
-      - workaround
-      - config_ssh_config_file
-
-######################### Run COMMON Tasks on all hosts
-
-- name: Wait for readiness
-  hosts: bastions
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  gather_facts: False
-  any_errors_fatal: true
-  tags:
-    - wait_ssh
-  tasks:
-    - name: wait for host to be available
-      wait_for:
-        host: '{{ inventory_hostname }}'
-        port: 22
-        search_regex: OpenSSH
-      with_items:
-        - "{{ groups['allhosts'] }}"
-
-- name: Configuring common Hosts
-  hosts: bastions,nfs,masters,infranodes,nodes
-  become: yes
-  any_errors_fatal: true
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_secret_vars.yml"
-  roles:
-    - common
-  tags:
-    - common_tasks
-
-
-######################### Run bastion Tasks
-
-
-
-- name: Configuring Bastion Hosts
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  roles:
-    - bastion
-  tags:
-    - bastion_tasks
-
-
-#########################Configuring nfs Host
-
-- name: Configuring nfs Host
-  hosts: nfs
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  roles:
-    - nfs
-  tags:
-    - nfs_tasks
-
-- name: Configuring nfs Host
-  hosts: nfs
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  tags:
-    - nfs_tasks
-  tasks:
-## TODO: Convert this to the file module
-    - shell: 'mkdir -p {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
-#    - shell: 'chown -R {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
-    - shell: 'chmod -R 0777 {{ nfs_export_path }}/user-vols/vol{1..{{ user_vols }}}'
-
-####################### Startring OpenShift Specific Deployment
-
-#########################Configuring openshfit-provisioner
-
-- name: Configuring openshfit-provisioner
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  roles:
-    - openshift-provisioner
-  tags:
-    - openshift_provisioner_tasks
-
-
-#########################Configuring openshfit-nodes
-
-- name: Configuring openshift-nodes
-  hosts: infranodes,nodes
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  roles:
-    - openshift-node
-  tags:
-    - openshift_node_tasks
-
-
-######################### Run OpenShift Installer
-
-
-- name: Run OpenShift Installer
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  tags:
-    - installing_openshift
-  tasks:
-
-    - name: Add log path to Ansible configuration
-      lineinfile:
-        regexp: "^#log_path"
-        dest: "/etc/ansible/ansible.cfg"
-        line: "log_path = /root/ansible.log"
-        state: present
-## TODO: Should just use the include module as
-## /etc/ansible/hosts is the default path.
-    - name: run ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
-      shell: "ansible-playbook -i /etc/ansible/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml"
-      register: openshift_install_log
-      tags:
-        - openshfit_installer
-## TODO: Same as above.
-
-    - name: get openshfit credentials file
-      shell: ansible masters[0] -b -m fetch -a "src=/root/.kube/config dest=/root/.kube/config flat=yes"
-      tags:
-        - get_openshift_credentials
-
-######################### Create user-vols PVs
-- name: Create user-vols PVs
-  hosts: bastions
-  become: yes
-  vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  tags:
-    - create_user_vol_pvs
-  tasks:
-    - set_fact:
-        pv_size: '10Gi'
-        pv_list: "{{ nfs_shares }}"
-        persistentVolumeReclaimPolicy: Retain
-
-    - name: Generate PV file
-      template:
-        src: files/{{ config_name }}_pvs.j2
-        dest: /root/pvs-{{ config_name }}-{{ guid }}.yml
-      tags:
-        - testing
-
-    - set_fact:
-        pv_size: "{{ user_vols_size }}"
-        persistentVolumeReclaimPolicy: Recycle
-
-    - name: Generate user vol PV file
-      template:
-        src: files/ocp-ml_userpvs.j2
-        dest: /root/userpvs-{{ config_name }}-{{ guid }}.yml
-      tags:
-        - testing
-## TODO: Remove become: true and test. This is already
-## defined higher up in the task that these two commands
-## are associated with.
-    - shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
-      become: true
-
-    - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
-      become: true
-
-######################### Workshop specific
 - name: Workshop admins
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_admins
@@ -247,7 +17,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs
@@ -265,14 +35,14 @@
 
     - name: Create workshop exports file
       file:
-        path: /etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports
+        path: "/etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports"
         state: touch
         mode: 755
 
     - name: Update workshop exports file
       lineinfile:
-        dest: /etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports
-        line: '/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)'
+        dest: "/etc/exports.d/{{ config_name }}-{{ guid }}-workshop.exports"
+        line: "/srv/nfs/{{ item }} *(rw,root_squash,no_wdelay,sync)"
         state: present
       with_items:
         - '{{ workshop_shares }}'
@@ -285,7 +55,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - create_workshop_vol_pvs
@@ -297,8 +67,8 @@
 
     - name: Generate workshop PV file
       template:
-        src: files/{{ config_name }}_pvs.j2
-        dest: /root/pvs-{{ config_name }}-{{ guid }}.yml
+        src: "files/{{ config_name }}_pvs.j2"
+        dest: "/root/pvs-{{ config_name }}-{{ guid }}.yml"
 
     - name: Create workshop PVs
       shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
@@ -307,7 +77,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_infra
@@ -315,8 +85,8 @@
 
     - name: 'Copy pipelines extension script to server'
       copy:
-        src: files/bu-workshop/tech-preview.js
-        dest: /etc/origin/master/tech-preview.js
+        src: "files/tech-preview.js"
+        dest: "/etc/origin/master/tech-preview.js"
 
     - name: 'Check for the extensionScripts directive in the master config'
       command: "grep extensionScripts /etc/origin/master/master-config.yaml"
@@ -358,8 +128,8 @@
 
     - name: Copy nexus.yaml to master
       copy:
-        src: files/bu-workshop/nexus.yaml
-        dest: /root/nexus.yaml
+        src: "files/nexus.yaml"
+        dest: "/root/nexus.yaml"
 
     - name: Check if Nexus was already provisioned
       command: "oc get service nexus -n workshop-infra"
@@ -406,8 +176,8 @@
 
     - name: Copy Nexus addrepo script
       copy:
-        src: files/bu-workshop/addrepo.sh
-        dest: /root/addrepo.sh
+        src: "files/addrepo.sh"
+        dest: "/root/addrepo.sh"
 
     - name: Check for redhat-ga repository in Nexus
       uri:
@@ -433,8 +203,8 @@
 
     - name: Copy gitlab-template.yaml to master
       copy:
-        src: files/bu-workshop/gitlab-template.yaml
-        dest: /root/gitlab-template.yaml
+        src: "files/gitlab-template.yaml"
+        dest: "/root/gitlab-template.yaml"
 
     - name: Check if Gitlab was already provisioned
       command: "oc get service gitlab-ce -n workshop-infra"
@@ -461,8 +231,8 @@
 
     - name: Copy simple-java-s2i IS to server
       copy:
-        src: files/bu-workshop/java-s2i-is.yaml
-        dest: /root/java-s2i-is.yaml
+        src: "files/java-s2i-is.yaml"
+        dest: "/root/java-s2i-is.yaml"
       tags:
         - copy-java-s2i-is
 
@@ -498,7 +268,7 @@
   hosts: nfs
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_nfs_hack
@@ -519,7 +289,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - project_request
@@ -527,7 +297,7 @@
 
     - name: Copy project request template to master
       copy:
-        src: files/bu-workshop/project-template.yaml
+        src: files/project-template.yaml
         dest: /root/project-template.yaml
 
     - name: Check for project request template
@@ -557,7 +327,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   tags:
     - workshop
     - workshop_users
@@ -572,13 +342,13 @@
 
     - name: Copy vars file to master
       copy:
-        src: "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+        src: "{{ config_name }}_vars.yml"
         dest: "/root/{{ config_name }}_vars.yml"
 
     - name: Copy user provision Ansible script remotely
       copy:
-        src: files/bu-workshop/userprovision.yaml
-        dest: /root/userprovision.yaml
+        src: "files/userprovision.yaml"
+        dest: "/root/userprovision.yaml"
 
     - name: Set Gitlab internal hostname
       set_fact:
@@ -613,7 +383,7 @@
   hosts: masters
   become: yes
   vars_files:
-    - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
+    - "{{ config_name }}_vars.yml"
   vars:
     workshop_repos:
       - "nationalparks"
@@ -651,8 +421,8 @@
 
     - name: Deploy maven settings file
       template:
-        src: files/bu-workshop/maven.xml.j2
-        dest: /home/ec2-user/maven.xml
+        src: "files/maven.xml.j2"
+        dest: "/home/ec2-user/maven.xml"
         mode: 0755
         owner: ec2-user
 
@@ -661,3 +431,4 @@
         mvn -q -s /home/ec2-user/maven.xml -f /home/ec2-user/repos/{{ item }}/pom.xml install
       with_items:
         - '{{ workshop_repos }}'
+
