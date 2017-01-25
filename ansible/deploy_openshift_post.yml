@@ -1,10 +1,12 @@
-
+# vim: set ft=ansible:
+---
 - name: Create user-vols PVs
   hosts: bastions
   become: yes
+  tags: 
+    - create_user_vol_pvs
   vars_files:
     - "../configs/standard_configs/{{ config_name }}/{{ config_name }}_vars.yml"
-  tags: [ create_user_vol_pvs ]
   tasks:
     - set_fact:
         pv_size: '10Gi'
@@ -15,7 +17,8 @@
       template:
         src: "../configs/standard_configs/{{ config_name }}/files/{{ config_name }}_pvs.j2"
         dest: "/root/pvs-{{ config_name }}-{{ guid }}.yml"
-      tags: [ gen_pv_file ]
+      tags: 
+        - gen_pv_file
 
     - set_fact:
         pv_size: "{{user_vols_size}}"
@@ -27,8 +30,10 @@
         dest: /root/userpvs-{{ config_name }}-{{ guid }}.yml
       tags:
         - gen_user_vol_pv
-    - shell: 'oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml'
+    - name: Create or update main PV definition
+      shell: "oc create -f /root/pvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/pvs-{{ config_name }}-{{ guid }}.yml"
       become: true
-    - shell: 'oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml'
+    - name: Create or update user PV definition
+      shell: "oc create -f /root/userpvs-{{ config_name }}-{{ guid }}.yml || oc update -f /root/userpvs-{{ config_name }}-{{ guid }}.yml"
       become: true
       register: result
