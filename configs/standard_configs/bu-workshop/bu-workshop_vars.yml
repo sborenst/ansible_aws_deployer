@@ -3,8 +3,8 @@
 ansible_ssh_user: ec2-user
 remote_user: ec2-user
 
-lab_tag: "1.5"
-
+lab_tag: "2.0.0"
+lab_url: "https://github.com/openshift-evangelists/openshift-workshops.git"
 subdomain_base_short: "{{ guid }}"
 subdomain_base: "{{ subdomain_base_short }}.openshift3roadshow.com"
 
