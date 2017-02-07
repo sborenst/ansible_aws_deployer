@@ -9,7 +9,7 @@ spec:
   - name: 'latest'
     annotations:
       description: Simple Java 1.8 S2I builder
-      iconClass: icon-jboss
+      iconClass: icon-openjdk
       tags: builder,java
       supports: java:8
       version: '1.0'
