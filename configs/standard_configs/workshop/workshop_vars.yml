@@ -12,7 +12,7 @@
 HostedZoneId:  Z186MFNM7DX4NF
 admin_user: wkulhane-redhat.com
 ### Key Pair name created for EC2 instances (AWS)
-key_name: "emeashared_aws"
+key_name: "workshop_aws"
 
 ## Networking (AWS)
 subdomain_base_short: "{{ guid }}"
@@ -22,7 +22,8 @@ subdomain_base: "{{subdomain_base_short}}{{subdomain_base_suffix}}"
 ## Environment Sizing
 
 bastion_instance_type: "t2.large"
-master_instance_type: "t2.large"
+# master_instance_type: "t2.large"
+master_instance_type: "c4.xlarge"
 etcd_instance_type: "{{master_instance_type}}"
 nfs_instance_type: "c3.large"
 infranode_instance_type: "m4.4xlarge"
